@@ -30,8 +30,8 @@ export interface HouseholdState {
 }
 
 export const DEFAULT_MEMBERS: HouseholdMember[] = [
-  { id: 'member-1', name: 'You', color: '#6b9fd4' },
-  { id: 'member-2', name: 'Partner', color: '#3d9b6e' },
+  { id: 'member-1', name: 'Richard', color: '#6b9fd4' },
+  { id: 'member-2', name: 'Erica', color: '#3d9b6e' },
 ];
 
 export const DEFAULT_WATCHLIST = [

@@ -68,13 +68,18 @@ export function Settings() {
       </div>
 
       <div className="settings-block">
-        <h3>Household members</h3>
+        <h3>Warp household members</h3>
+        <p className="settings-hint">
+          Names are saved in this browser only. Erica must open the app on her phone and
+          check this section too — or she will still see old labels until she does.
+        </p>
         {state.members.map((m) => (
           <label key={m.id}>
-            Display name
+            {m.id === 'member-1' ? 'Richard' : 'Erica'} (display name)
             <input
               value={m.name}
               onChange={(e) => updateMemberName(m.id, e.target.value)}
+              aria-label={m.id === 'member-1' ? 'Richard display name' : 'Erica display name'}
             />
           </label>
         ))}
