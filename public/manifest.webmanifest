@@ -1,7 +1,7 @@
 {
-  "name": "Family Wealth Creator",
-  "short_name": "Family Wealth",
-  "description": "Household investment planner and daily market dashboard",
+  "name": "Warp family investment HQ",
+  "short_name": "Warp HQ",
+  "description": "Warp family investment planner and daily market dashboard",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f1218",

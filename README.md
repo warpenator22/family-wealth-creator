@@ -1,6 +1,6 @@
-# Family Wealth Creator
+# Warp family investment HQ
 
-UK investment portfolio planner for ISAs and SIPPs.
+UK investment portfolio planner for ISAs and SIPPs — built for the Warp household.
 
 ## Your pre-loaded plan
 

@@ -32,10 +32,10 @@ function App() {
     <div className="app">
       <header className="site-header">
         <div className="header-inner">
-          <p className="eyebrow">Family Wealth Creator</p>
-          <h1>Family investment HQ</h1>
+          <p className="eyebrow">Warp family</p>
+          <h1>Investment HQ</h1>
           <p className="lede">
-            Daily market intel, shared holdings, and long-term plans for your household.
+            Daily market intel, shared holdings, and long-term plans for the Warp family.
           </p>
         </div>
         <nav className="app-nav" aria-label="Main">

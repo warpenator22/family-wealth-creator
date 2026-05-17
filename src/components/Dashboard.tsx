@@ -97,7 +97,7 @@ export function Dashboard() {
           >
             {formatGBP(portfolioStats.dayChangeGbp)}
           </span>
-          <span className="stat-sub">All family accounts combined</span>
+          <span className="stat-sub">All Warp household accounts</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Watching</span>
@@ -109,7 +109,7 @@ export function Dashboard() {
       </div>
 
       <section className="dash-section">
-        <h2>Today&apos;s family note</h2>
+        <h2>Today&apos;s Warp family note</h2>
         <p className="section-hint">
           Logged as <strong>{activeMember.name}</strong> — visible to both of you.
         </p>
