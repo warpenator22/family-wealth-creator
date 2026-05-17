@@ -100,7 +100,7 @@ export function Settings() {
         <ul className="settings-tips">
           <li>Open the <strong>Dashboard</strong> each morning — refresh market data.</li>
           <li>Log trades in <strong>Holdings</strong> the same day you execute on ii.</li>
-          <li>Use the family note for decisions you both need to see.</li>
+          <li>Use the Warp family note for decisions you both need to see.</li>
           <li>Bookmark this app on both phones (Add to Home Screen).</li>
         </ul>
       </div>
