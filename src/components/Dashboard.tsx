@@ -3,13 +3,15 @@ import { useHousehold } from '../context/HouseholdContext';
 import { formatGBP } from '../lib/finance';
 import { formatPct, formatUsd } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
+import { DailyRitual } from './DailyRitual';
 import { UserSwitcher } from './UserSwitcher';
 import { INVEST_ACCOUNTS } from '../lib/fundManager/allocate';
 
 const FX_GBP_USD = 0.79;
 
 export function Dashboard() {
-  const { state, activeMember, getDailyNote, setDailyNote } = useHousehold();
+  const { state, activeMember, getDailyNote, setDailyNote, markRitual, recordActivity } =
+    useHousehold();
   const { quotes, marketNews, holdingNews, loading, error, lastRefresh, refresh } =
     useMarketIntel();
   const [note, setNote] = useState(getDailyNote);
@@ -45,8 +47,15 @@ export function Dashboard() {
 
   const saveNote = () => setDailyNote(note);
 
+  const handleRefresh = async () => {
+    await refresh();
+    markRitual('refresh');
+    recordActivity();
+  };
+
   return (
     <div className="dashboard">
+      <DailyRitual />
       <div className="dash-toolbar">
         <UserSwitcher />
         <div className="dash-actions">
@@ -55,7 +64,7 @@ export function Dashboard() {
               ? `Updated ${lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
               : 'Not refreshed'}
           </span>
-          <button type="button" className="btn-primary" onClick={() => refresh()} disabled={loading}>
+          <button type="button" className="btn-primary" onClick={handleRefresh} disabled={loading}>
             {loading ? 'Refreshing…' : 'Refresh market'}
           </button>
         </div>

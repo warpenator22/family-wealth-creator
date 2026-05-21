@@ -35,6 +35,8 @@ export function loadHousehold(): HouseholdState {
       ...parsed,
       version: 1,
       members: normalizeMembers(parsed.members),
+      ritualCompletions: parsed.ritualCompletions ?? {},
+      memberLastActive: parsed.memberLastActive ?? {},
     };
   } catch {
     return createDefaultState();

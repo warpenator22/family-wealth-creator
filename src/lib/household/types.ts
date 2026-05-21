@@ -27,6 +27,10 @@ export interface HouseholdState {
   watchlist: string[];
   /** ISO date (YYYY-MM-DD) -> memberId -> note */
   dailyNotes: Record<string, Record<string, string>>;
+  /** ISO date -> ritual id -> completed */
+  ritualCompletions: Record<string, Record<string, boolean>>;
+  /** memberId -> ISO timestamp last meaningful action */
+  memberLastActive: Record<string, string>;
 }
 
 export const DEFAULT_MEMBERS: HouseholdMember[] = [
@@ -55,5 +59,7 @@ export function createDefaultState(): HouseholdState {
     holdings: [],
     watchlist: DEFAULT_WATCHLIST,
     dailyNotes: {},
+    ritualCompletions: {},
+    memberLastActive: {},
   };
 }

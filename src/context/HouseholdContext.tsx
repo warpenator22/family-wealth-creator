@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { computeStreak } from '../lib/household/dailyRitual';
 import { loadHousehold, saveHousehold, todayKey } from '../lib/household/storage';
 import type { Holding, HouseholdMember, HouseholdState } from '../lib/household/types';
 
@@ -24,6 +25,11 @@ interface HouseholdContextValue {
   addToWatchlist: (symbol: string) => void;
   setDailyNote: (note: string) => void;
   getDailyNote: (date?: string) => string;
+  toggleRitual: (ritualId: string, done?: boolean) => void;
+  markRitual: (ritualId: string) => void;
+  recordActivity: (memberId?: string) => void;
+  getTodayRituals: () => Record<string, boolean>;
+  ritualStreak: number;
   allSymbols: string[];
 }
 
@@ -58,14 +64,65 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, autoRefreshMinutes: minutes }));
   }, []);
 
+  const markRitualInternal = (
+    prev: HouseholdState,
+    ritualId: string,
+    done: boolean,
+    date = todayKey()
+  ): HouseholdState => ({
+    ...prev,
+    ritualCompletions: {
+      ...prev.ritualCompletions,
+      [date]: {
+        ...(prev.ritualCompletions[date] ?? {}),
+        [ritualId]: done,
+      },
+    },
+  });
+
+  const recordActivity = useCallback((memberId?: string) => {
+    const id = memberId ?? '';
+    setState((s) => {
+      const mid = id || s.activeMemberId;
+      return {
+        ...s,
+        memberLastActive: {
+          ...s.memberLastActive,
+          [mid]: new Date().toISOString(),
+        },
+      };
+    });
+  }, []);
+
+  const markRitual = useCallback((ritualId: string) => {
+    setState((s) => markRitualInternal(s, ritualId, true));
+  }, []);
+
+  const toggleRitual = useCallback((ritualId: string, done?: boolean) => {
+    setState((s) => {
+      const date = todayKey();
+      const current = s.ritualCompletions[date]?.[ritualId] ?? false;
+      return markRitualInternal(s, ritualId, done ?? !current);
+    });
+    recordActivity();
+  }, [recordActivity]);
+
   const addHolding = useCallback((holding: Omit<Holding, 'id'>) => {
-    setState((s) => ({
-      ...s,
-      holdings: [
-        ...s.holdings,
-        { ...holding, id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` },
-      ],
-    }));
+    setState((s) => {
+      let next: HouseholdState = {
+        ...s,
+        holdings: [
+          ...s.holdings,
+          { ...holding, id: `h-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` },
+        ],
+        memberLastActive: {
+          ...s.memberLastActive,
+          [holding.memberId]: new Date().toISOString(),
+        },
+      };
+      next = markRitualInternal(next, 'holdings', true);
+      return next;
+    });
   }, []);
 
   const removeHolding = useCallback((id: string) => {
@@ -94,10 +151,10 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const setDailyNote = useCallback(
-    (note: string) => {
-      const date = todayKey();
-      setState((s) => ({
+  const setDailyNote = useCallback((note: string) => {
+    const date = todayKey();
+    setState((s) => {
+      let next: HouseholdState = {
         ...s,
         dailyNotes: {
           ...s.dailyNotes,
@@ -106,16 +163,32 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
             [s.activeMemberId]: note,
           },
         },
-      }));
-    },
-    []
-  );
+        memberLastActive: {
+          ...s.memberLastActive,
+          [s.activeMemberId]: new Date().toISOString(),
+        },
+      };
+      if (note.trim()) {
+        next = markRitualInternal(next, 'note', true);
+      }
+      return next;
+    });
+  }, []);
 
   const getDailyNote = useCallback(
     (date = todayKey()) => {
       return state.dailyNotes[date]?.[state.activeMemberId] ?? '';
     },
     [state.dailyNotes, state.activeMemberId]
+  );
+
+  const getTodayRituals = useCallback(() => {
+    return state.ritualCompletions[todayKey()] ?? {};
+  }, [state.ritualCompletions]);
+
+  const ritualStreak = useMemo(
+    () => computeStreak(state.ritualCompletions),
+    [state.ritualCompletions]
   );
 
   const allSymbols = useMemo(() => {
@@ -138,6 +211,11 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       addToWatchlist,
       setDailyNote,
       getDailyNote,
+      toggleRitual,
+      markRitual,
+      recordActivity,
+      getTodayRituals,
+      ritualStreak,
       allSymbols,
     }),
     [
@@ -154,6 +232,11 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       addToWatchlist,
       setDailyNote,
       getDailyNote,
+      toggleRitual,
+      markRitual,
+      recordActivity,
+      getTodayRituals,
+      ritualStreak,
       allSymbols,
     ]
   );
