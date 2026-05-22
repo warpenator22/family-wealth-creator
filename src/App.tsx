@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Dashboard } from './components/Dashboard';
 import { FundManager } from './components/FundManager';
+import { AccountsManager } from './components/AccountsManager';
 import { HoldingsEditor } from './components/HoldingsEditor';
 import { NetWorthOverview } from './components/NetWorthOverview';
 import { PortfolioCard } from './components/PortfolioCard';
@@ -8,7 +9,13 @@ import { Settings } from './components/Settings';
 import { DEFAULT_PLANS } from './lib/portfolios';
 import './App.css';
 
-export type AppView = 'dashboard' | 'planner' | 'fund-manager' | 'holdings' | 'settings';
+export type AppView =
+  | 'dashboard'
+  | 'accounts'
+  | 'holdings'
+  | 'planner'
+  | 'fund-manager'
+  | 'settings';
 
 function App() {
   const [view, setView] = useState<AppView>('dashboard');
@@ -22,6 +29,7 @@ function App() {
 
   const navItems: { id: AppView; label: string }[] = [
     { id: 'dashboard', label: 'Dashboard' },
+    { id: 'accounts', label: 'Accounts' },
     { id: 'holdings', label: 'Holdings' },
     { id: 'planner', label: 'Wealth planner' },
     { id: 'fund-manager', label: 'Fund manager' },
@@ -53,6 +61,7 @@ function App() {
       </header>
 
       {view === 'dashboard' && <Dashboard />}
+      {view === 'accounts' && <AccountsManager />}
       {view === 'holdings' && <HoldingsEditor />}
       {view === 'fund-manager' && <FundManager />}
       {view === 'settings' && <Settings />}

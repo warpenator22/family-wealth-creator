@@ -7,6 +7,13 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import {
+  channelForKind,
+  getAccountLabel,
+  slugId,
+  type AccountKind,
+  type HouseholdAccount,
+} from '../lib/household/accounts';
 import { computeStreak } from '../lib/household/dailyRitual';
 import { loadHousehold, saveHousehold, todayKey } from '../lib/household/storage';
 import type { Holding, HouseholdMember, HouseholdState } from '../lib/household/types';
@@ -31,6 +38,16 @@ interface HouseholdContextValue {
   getTodayRituals: () => Record<string, boolean>;
   ritualStreak: number;
   allSymbols: string[];
+  addAccount: (input: {
+    label: string;
+    kind: AccountKind;
+    currency: 'GBP' | 'USD';
+    platform?: string;
+    notes?: string;
+  }) => void;
+  updateAccount: (id: string, patch: Partial<HouseholdAccount>) => void;
+  removeAccount: (id: string) => boolean;
+  getAccountLabel: (accountId: string) => string;
 }
 
 const HouseholdContext = createContext<HouseholdContextValue | null>(null);
@@ -106,6 +123,72 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     });
     recordActivity();
   }, [recordActivity]);
+
+  const addAccount = useCallback(
+    (input: {
+      label: string;
+      kind: AccountKind;
+      currency: 'GBP' | 'USD';
+      platform?: string;
+      notes?: string;
+    }) => {
+      const label = input.label.trim();
+      if (!label) return;
+      const account: HouseholdAccount = {
+        id: slugId(label),
+        label,
+        kind: input.kind,
+        currency: input.currency,
+        channel: channelForKind(input.kind, input.currency),
+        platform: input.platform?.trim() || undefined,
+        notes: input.notes?.trim() || undefined,
+        suggestedModelId:
+          input.kind === 'sipp' || input.kind === 'pension'
+            ? 'sipp-accumulation'
+            : input.kind === 'brokerage' && input.currency === 'USD'
+              ? 'us-sp500-core'
+              : input.kind === 'isa' || input.kind === 'gia'
+                ? 'growth-aggressive'
+                : undefined,
+        defaultPot: 0,
+      };
+      setState((s) => ({
+        ...s,
+        accounts: [...s.accounts, account],
+      }));
+      recordActivity();
+    },
+    [recordActivity]
+  );
+
+  const updateAccount = useCallback((id: string, patch: Partial<HouseholdAccount>) => {
+    setState((s) => ({
+      ...s,
+      accounts: s.accounts.map((a) => {
+        if (a.id !== id) return a;
+        const next = { ...a, ...patch };
+        if (patch.kind || patch.currency) {
+          next.channel = channelForKind(next.kind, next.currency);
+        }
+        return next;
+      }),
+    }));
+  }, []);
+
+  const removeAccount = useCallback((id: string): boolean => {
+    let removed = false;
+    setState((s) => {
+      if (s.holdings.some((h) => h.accountId === id)) return s;
+      removed = true;
+      return { ...s, accounts: s.accounts.filter((a) => a.id !== id) };
+    });
+    return removed;
+  }, []);
+
+  const resolveAccountLabel = useCallback(
+    (accountId: string) => getAccountLabel(state.accounts, accountId),
+    [state.accounts]
+  );
 
   const addHolding = useCallback((holding: Omit<Holding, 'id'>) => {
     setState((s) => {
@@ -217,6 +300,10 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       getTodayRituals,
       ritualStreak,
       allSymbols,
+      addAccount,
+      updateAccount,
+      removeAccount,
+      getAccountLabel: resolveAccountLabel,
     }),
     [
       state,
@@ -238,6 +325,10 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       getTodayRituals,
       ritualStreak,
       allSymbols,
+      addAccount,
+      updateAccount,
+      removeAccount,
+      resolveAccountLabel,
     ]
   );
 

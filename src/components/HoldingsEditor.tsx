@@ -1,27 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
-import { INVEST_ACCOUNTS } from '../lib/fundManager/allocate';
 import { UserSwitcher } from './UserSwitcher';
 
 export function HoldingsEditor() {
-  const { state, activeMember, addHolding, removeHolding, addToWatchlist } = useHousehold();
+  const { state, activeMember, addHolding, removeHolding, addToWatchlist, getAccountLabel } =
+    useHousehold();
   const [symbol, setSymbol] = useState('');
   const [shares, setShares] = useState('');
   const [costGbp, setCostGbp] = useState('');
-  const [accountId, setAccountId] = useState('kids-isa');
+  const [accountId, setAccountId] = useState(state.accounts[0]?.id ?? '');
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    if (!state.accounts.some((a) => a.id === accountId) && state.accounts[0]) {
+      setAccountId(state.accounts[0].id);
+    }
+  }, [state.accounts, accountId]);
+
+  const selectedAccount = state.accounts.find((a) => a.id === accountId);
+  const isCrypto = selectedAccount?.kind === 'crypto';
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const sym = symbol.trim().toUpperCase();
-    if (!sym) return;
+    if (!sym || !accountId) return;
     addHolding({
       memberId: activeMember.id,
       accountId,
       symbol: sym,
       shares: Number(shares) || 0,
       costGbp: Number(costGbp) || 0,
-      currency: 'USD',
+      currency: selectedAccount?.currency === 'USD' ? 'USD' : 'GBP',
       boughtAt: new Date().toISOString().slice(0, 10),
       notes: notes || undefined,
     });
@@ -36,72 +45,81 @@ export function HoldingsEditor() {
     <section className="holdings-editor">
       <div className="section-heading">
         <h2>Holdings</h2>
-        <p>Log trades on Interactive Investors — shared across the household.</p>
+        <p>
+          Self-report what you own — pick an account, then log ticker, quantity, and cost.
+          No link to Schwab, ii, or exchanges.
+        </p>
       </div>
       <UserSwitcher />
 
-      <form className="holding-form" onSubmit={submit}>
-        <div className="form-grid">
+      {state.accounts.length === 0 ? (
+        <p className="empty-hint">
+          Add accounts first (Crypto, Pension, etc.) in the <strong>Accounts</strong> tab.
+        </p>
+      ) : (
+        <form className="holding-form" onSubmit={submit}>
+          <div className="form-grid">
+            <label>
+              {isCrypto ? 'Asset' : 'Ticker'}
+              <input
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                placeholder={isCrypto ? 'BTC' : 'MSFT'}
+                required
+              />
+            </label>
+            <label>
+              {isCrypto ? 'Amount' : 'Shares'}
+              <input
+                type="number"
+                step="any"
+                value={shares}
+                onChange={(e) => setShares(e.target.value)}
+                placeholder={isCrypto ? '0.5' : '4'}
+                required
+              />
+            </label>
+            <label>
+              Cost ({selectedAccount?.currency === 'USD' ? '$' : '£'})
+              <input
+                type="number"
+                value={costGbp}
+                onChange={(e) => setCostGbp(e.target.value)}
+                placeholder="1200"
+                required
+              />
+            </label>
+            <label>
+              Account
+              <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                {state.accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.label} ({a.kind})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <label>
-            Ticker
+            Notes
             <input
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              placeholder="MSFT"
-              required
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Manual entry, wallet address…"
             />
           </label>
-          <label>
-            Shares
-            <input
-              type="number"
-              step="any"
-              value={shares}
-              onChange={(e) => setShares(e.target.value)}
-              placeholder="4"
-              required
-            />
-          </label>
-          <label>
-            Cost (£)
-            <input
-              type="number"
-              value={costGbp}
-              onChange={(e) => setCostGbp(e.target.value)}
-              placeholder="1200"
-              required
-            />
-          </label>
-          <label>
-            Account
-            <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-              {INVEST_ACCOUNTS.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <label>
-          Notes
-          <input
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="ii limit order, day-one starter…"
-          />
-        </label>
-        <button type="submit" className="btn-primary">
-          Add holding as {activeMember.name}
-        </button>
-      </form>
+          <button type="submit" className="btn-primary">
+            Add holding as {activeMember.name}
+          </button>
+        </form>
+      )}
 
       <table className="fm-table holdings-table">
         <thead>
           <tr>
             <th>Symbol</th>
             <th>Account</th>
-            <th>Shares</th>
+            <th>Qty</th>
             <th>Cost</th>
             <th>Logged by</th>
             <th></th>
@@ -111,19 +129,21 @@ export function HoldingsEditor() {
           {state.holdings.length === 0 && (
             <tr>
               <td colSpan={6} className="empty-hint">
-                Example: MSFT · 4 shares · £1,200 · Kids&apos; ISA
+                Example: BTC · 0.5 · £20,000 · Crypto — or MSFT · 4 · £1,200 · Kids&apos; ISA
               </td>
             </tr>
           )}
           {state.holdings.map((h) => {
             const member = state.members.find((m) => m.id === h.memberId);
-            const account = INVEST_ACCOUNTS.find((a) => a.id === h.accountId);
             return (
               <tr key={h.id}>
                 <td className="col-ticker">{h.symbol}</td>
-                <td>{account?.label ?? h.accountId}</td>
+                <td>{getAccountLabel(h.accountId)}</td>
                 <td className="col-num">{h.shares}</td>
-                <td className="col-num">£{h.costGbp.toLocaleString()}</td>
+                <td className="col-num">
+                  {h.currency === 'USD' ? '$' : '£'}
+                  {h.costGbp.toLocaleString()}
+                </td>
                 <td>{member?.name ?? '—'}</td>
                 <td>
                   <button

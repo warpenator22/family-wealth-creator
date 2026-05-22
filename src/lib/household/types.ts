@@ -1,3 +1,5 @@
+import { DEFAULT_ACCOUNTS, type HouseholdAccount } from './accounts';
+
 export interface HouseholdMember {
   id: string;
   name: string;
@@ -23,6 +25,7 @@ export interface HouseholdState {
   activeMemberId: string;
   finnhubApiKey: string;
   autoRefreshMinutes: number;
+  accounts: HouseholdAccount[];
   holdings: Holding[];
   watchlist: string[];
   /** ISO date (YYYY-MM-DD) -> memberId -> note */
@@ -56,6 +59,7 @@ export function createDefaultState(): HouseholdState {
     activeMemberId: 'member-1',
     finnhubApiKey: import.meta.env.VITE_FINNHUB_API_KEY ?? '',
     autoRefreshMinutes: 5,
+    accounts: [...DEFAULT_ACCOUNTS],
     holdings: [],
     watchlist: DEFAULT_WATCHLIST,
     dailyNotes: {},

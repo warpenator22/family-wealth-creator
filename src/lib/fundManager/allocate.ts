@@ -1,64 +1,7 @@
 import type { UkLine, UsLine } from './modelPortfolios';
 import { getModelById } from './modelPortfolios';
 
-export type InvestAccountId =
-  | 'kids-isa'
-  | 'personal-isa'
-  | 'personal-sipp'
-  | 'uk-gia'
-  | 'us-brokerage';
-
-export interface InvestAccount {
-  id: InvestAccountId;
-  label: string;
-  channel: 'uk' | 'us';
-  currency: 'GBP' | 'USD';
-  defaultPot: number;
-  suggestedModelId: string;
-}
-
-export const INVEST_ACCOUNTS: InvestAccount[] = [
-  {
-    id: 'kids-isa',
-    label: "Kids' ISA",
-    channel: 'uk',
-    currency: 'GBP',
-    defaultPot: 20_000,
-    suggestedModelId: 'growth-aggressive',
-  },
-  {
-    id: 'personal-isa',
-    label: 'Your ISA',
-    channel: 'uk',
-    currency: 'GBP',
-    defaultPot: 50_000,
-    suggestedModelId: 'growth-aggressive',
-  },
-  {
-    id: 'personal-sipp',
-    label: 'Your SIPP',
-    channel: 'uk',
-    currency: 'GBP',
-    defaultPot: 0,
-    suggestedModelId: 'sipp-accumulation',
-  },
-  {
-    id: 'uk-gia',
-    label: 'UK GIA (ISA overflow)',
-    channel: 'uk',
-    currency: 'GBP',
-    defaultPot: 100_000,
-    suggestedModelId: 'growth-aggressive',
-  },
-  {
-    id: 'us-brokerage',
-    label: 'US brokerage (~$500k)',
-    channel: 'us',
-    currency: 'USD',
-    defaultPot: 500_000,
-    suggestedModelId: 'us-sp500-core',
-  },
-];
+import type { AccountChannel } from '../household/accounts';
 
 export interface AllocationRow {
   ticker: string;
@@ -71,8 +14,9 @@ export interface AllocationRow {
 export function allocate(
   modelId: string,
   pot: number,
-  channel: 'uk' | 'us'
+  channel: AccountChannel
 ): AllocationRow[] {
+  if (channel === 'crypto') return [];
   const model = getModelById(modelId);
   if (!model) return [];
 

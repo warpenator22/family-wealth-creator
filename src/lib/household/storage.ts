@@ -1,3 +1,4 @@
+import { DEFAULT_ACCOUNTS, type HouseholdAccount } from './accounts';
 import {
   createDefaultState,
   type HouseholdMember,
@@ -24,6 +25,20 @@ function normalizeMembers(members: HouseholdMember[] | undefined): HouseholdMemb
   });
 }
 
+function normalizeAccounts(saved: HouseholdAccount[] | undefined): HouseholdAccount[] {
+  if (!saved?.length) return [...DEFAULT_ACCOUNTS];
+
+  const byId = new Map<string, HouseholdAccount>();
+  for (const def of DEFAULT_ACCOUNTS) {
+    const match = saved.find((a) => a.id === def.id);
+    byId.set(def.id, match ? { ...def, ...match, id: def.id } : def);
+  }
+  for (const a of saved) {
+    if (!byId.has(a.id)) byId.set(a.id, a);
+  }
+  return Array.from(byId.values());
+}
+
 export function loadHousehold(): HouseholdState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -37,6 +52,7 @@ export function loadHousehold(): HouseholdState {
       members: normalizeMembers(parsed.members),
       ritualCompletions: parsed.ritualCompletions ?? {},
       memberLastActive: parsed.memberLastActive ?? {},
+      accounts: normalizeAccounts(parsed.accounts),
     };
   } catch {
     return createDefaultState();

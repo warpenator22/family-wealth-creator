@@ -5,13 +5,19 @@ import { formatPct, formatUsd } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
 import { DailyRitual } from './DailyRitual';
 import { UserSwitcher } from './UserSwitcher';
-import { INVEST_ACCOUNTS } from '../lib/fundManager/allocate';
 
 const FX_GBP_USD = 0.79;
 
 export function Dashboard() {
-  const { state, activeMember, getDailyNote, setDailyNote, markRitual, recordActivity } =
-    useHousehold();
+  const {
+    state,
+    activeMember,
+    getDailyNote,
+    setDailyNote,
+    markRitual,
+    recordActivity,
+    getAccountLabel,
+  } = useHousehold();
   const { quotes, marketNews, holdingNews, loading, error, lastRefresh, refresh } =
     useMarketIntel();
   const [note, setNote] = useState(getDailyNote);
@@ -142,15 +148,21 @@ export function Dashboard() {
           <div className="quote-grid">
             {state.holdings.map((h) => {
               const q = quotes.get(h.symbol.toUpperCase());
-              const account = INVEST_ACCOUNTS.find((a) => a.id === h.accountId);
               const valueUsd = q ? h.shares * q.price : 0;
+              const acct = state.accounts.find((a) => a.id === h.accountId);
               return (
                 <div key={h.id} className="quote-card">
                   <div className="quote-card-top">
                     <span className="quote-sym">{h.symbol}</span>
-                    <span className="quote-account">{account?.label ?? h.accountId}</span>
+                    <span className="quote-account">{getAccountLabel(h.accountId)}</span>
                   </div>
-                  <span className="quote-price">{q ? formatUsd(q.price) : '—'}</span>
+                  <span className="quote-price">
+                    {acct?.kind === 'crypto'
+                      ? '—'
+                      : q
+                        ? formatUsd(q.price)
+                        : '—'}
+                  </span>
                   {q && (
                     <span className={`quote-chg ${q.change >= 0 ? 'up' : 'down'}`}>
                       {formatUsd(q.change)} ({formatPct(q.changePercent)})
