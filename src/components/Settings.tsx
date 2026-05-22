@@ -1,5 +1,12 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
+import {
+  exportHouseholdJson,
+  getHouseholdBackup,
+  householdStorageSummary,
+  importHouseholdJson,
+  restoreHouseholdFromBackup,
+} from '../lib/household/storage';
 
 export function Settings() {
   const {
@@ -8,9 +15,14 @@ export function Settings() {
     setAutoRefresh,
     updateMemberName,
     setWatchlist,
+    replaceState,
   } = useHousehold();
   const [key, setKey] = useState(state.finnhubApiKey);
   const [watchlistText, setWatchlistText] = useState(state.watchlist.join(', '));
+  const [dataMessage, setDataMessage] = useState<string | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
+  const storage = householdStorageSummary(state);
+  const backup = getHouseholdBackup();
 
   const saveKey = () => setFinnhubKey(key.trim());
   const saveWatchlist = () => {
@@ -26,7 +38,97 @@ export function Settings() {
     <section className="settings-panel">
       <div className="section-heading">
         <h2>Settings</h2>
-        <p>Shared on this device — both you and your partner use the same household data.</p>
+        <p>
+          Saved in <strong>this browser only</strong> (not on a server). The same URL on another
+          phone, private browsing, or after clearing site data starts empty.
+        </p>
+      </div>
+
+      <div className="settings-block settings-data">
+        <h3>Household data on this device</h3>
+        <p className="settings-hint">
+          <strong>{storage.holdingCount}</strong> holding
+          {storage.holdingCount === 1 ? '' : 's'} saved locally
+          {storage.hasBackup && (
+            <>
+              {' '}
+              · automatic backup has <strong>{storage.backupHoldingCount}</strong>
+            </>
+          )}
+          .
+        </p>
+        {dataMessage && <p className="settings-data-msg">{dataMessage}</p>}
+        <div className="settings-data-actions">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              const blob = new Blob([exportHouseholdJson(state)], {
+                type: 'application/json',
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `warp-hq-backup-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+              setDataMessage('Downloaded backup file.');
+            }}
+          >
+            Export backup
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => importRef.current?.click()}
+          >
+            Import backup
+          </button>
+          <input
+            ref={importRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              try {
+                const text = await file.text();
+                const merged = importHouseholdJson(text);
+                replaceState(merged);
+                setDataMessage(`Imported ${merged.holdings.length} holdings from file.`);
+              } catch {
+                setDataMessage('Import failed — check the JSON file.');
+              }
+              e.target.value = '';
+            }}
+          />
+          {storage.hasBackup && storage.holdingCount < storage.backupHoldingCount && (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                const restored = restoreHouseholdFromBackup();
+                if (restored) {
+                  replaceState(restored);
+                  setDataMessage(
+                    `Restored backup with ${restored.holdings.length} holdings.`
+                  );
+                } else {
+                  setDataMessage('No backup available on this device.');
+                }
+              }}
+            >
+              Restore automatic backup
+            </button>
+          )}
+        </div>
+        {backup && storage.holdingCount === 0 && storage.backupHoldingCount > 0 && (
+          <p className="settings-hint settings-recover-hint">
+            Holdings look empty but a backup exists on this device — try{' '}
+            <strong>Restore automatic backup</strong>.
+          </p>
+        )}
       </div>
 
       <div className="settings-block">

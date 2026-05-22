@@ -6,6 +6,7 @@ import {
 } from './types';
 
 const STORAGE_KEY = 'fwc-household-v1';
+const BACKUP_KEY = 'fwc-household-v1-backup';
 
 function normalizeMembers(members: HouseholdMember[] | undefined): HouseholdMember[] {
   const defaults = createDefaultState().members;
@@ -14,7 +15,6 @@ function normalizeMembers(members: HouseholdMember[] | undefined): HouseholdMemb
   return defaults.map((def) => {
     const saved = members.find((m) => m.id === def.id);
     if (!saved) return def;
-    // One-time upgrade for older saves that still say Partner / You
     if (saved.id === 'member-2' && saved.name === 'Partner') {
       return { ...saved, name: 'Erica' };
     }
@@ -46,28 +46,109 @@ function normalizeAccounts(saved: HouseholdAccount[] | undefined): HouseholdAcco
   return Array.from(byId.values());
 }
 
+/** Merge saved JSON with defaults without dropping holdings or other arrays */
+export function mergeHouseholdState(parsed: Partial<HouseholdState>): HouseholdState {
+  const defaults = createDefaultState();
+  return {
+    ...defaults,
+    ...parsed,
+    version: 1,
+    members: normalizeMembers(parsed.members),
+    accounts: normalizeAccounts(parsed.accounts),
+    holdings: Array.isArray(parsed.holdings) ? parsed.holdings : defaults.holdings,
+    watchlist: Array.isArray(parsed.watchlist) ? parsed.watchlist : defaults.watchlist,
+    dailyNotes:
+      parsed.dailyNotes && typeof parsed.dailyNotes === 'object'
+        ? parsed.dailyNotes
+        : defaults.dailyNotes,
+    ritualCompletions:
+      parsed.ritualCompletions && typeof parsed.ritualCompletions === 'object'
+        ? parsed.ritualCompletions
+        : defaults.ritualCompletions,
+    memberLastActive:
+      parsed.memberLastActive && typeof parsed.memberLastActive === 'object'
+        ? parsed.memberLastActive
+        : defaults.memberLastActive,
+    finnhubApiKey:
+      typeof parsed.finnhubApiKey === 'string'
+        ? parsed.finnhubApiKey
+        : defaults.finnhubApiKey,
+    activeMemberId:
+      typeof parsed.activeMemberId === 'string'
+        ? parsed.activeMemberId
+        : defaults.activeMemberId,
+    autoRefreshMinutes:
+      typeof parsed.autoRefreshMinutes === 'number'
+        ? parsed.autoRefreshMinutes
+        : defaults.autoRefreshMinutes,
+  };
+}
+
 export function loadHousehold(): HouseholdState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultState();
-    const parsed = JSON.parse(raw) as HouseholdState;
-    const defaults = createDefaultState();
-    return {
-      ...defaults,
-      ...parsed,
-      version: 1,
-      members: normalizeMembers(parsed.members),
-      ritualCompletions: parsed.ritualCompletions ?? {},
-      memberLastActive: parsed.memberLastActive ?? {},
-      accounts: normalizeAccounts(parsed.accounts),
-    };
+    const parsed = JSON.parse(raw) as Partial<HouseholdState>;
+    return mergeHouseholdState(parsed);
   } catch {
-    return createDefaultState();
+    return tryLoadBackup() ?? createDefaultState();
+  }
+}
+
+function tryLoadBackup(): HouseholdState | null {
+  try {
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return null;
+    return mergeHouseholdState(JSON.parse(raw) as Partial<HouseholdState>);
+  } catch {
+    return null;
   }
 }
 
 export function saveHousehold(state: HouseholdState): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const json = JSON.stringify(state);
+  try {
+    const prev = localStorage.getItem(STORAGE_KEY);
+    if (prev) localStorage.setItem(BACKUP_KEY, prev);
+  } catch {
+    /* quota — still try main save */
+  }
+  localStorage.setItem(STORAGE_KEY, json);
+}
+
+export function exportHouseholdJson(state: HouseholdState): string {
+  return JSON.stringify(state, null, 2);
+}
+
+export function importHouseholdJson(raw: string): HouseholdState {
+  const parsed = JSON.parse(raw) as Partial<HouseholdState>;
+  const merged = mergeHouseholdState(parsed);
+  saveHousehold(merged);
+  return merged;
+}
+
+export function getHouseholdBackup(): HouseholdState | null {
+  return tryLoadBackup();
+}
+
+export function restoreHouseholdFromBackup(): HouseholdState | null {
+  const backup = tryLoadBackup();
+  if (!backup) return null;
+  saveHousehold(backup);
+  return backup;
+}
+
+export function householdStorageSummary(state: HouseholdState): {
+  holdingCount: number;
+  hasBackup: boolean;
+  backupHoldingCount: number;
+} {
+  const backup = tryLoadBackup();
+  return {
+    holdingCount: state.holdings.length,
+    hasBackup: backup !== null,
+    backupHoldingCount: backup?.holdings.length ?? 0,
+  };
 }
 
 export function todayKey(): string {

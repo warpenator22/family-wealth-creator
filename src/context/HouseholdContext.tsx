@@ -48,6 +48,7 @@ interface HouseholdContextValue {
   updateAccount: (id: string, patch: Partial<HouseholdAccount>) => void;
   removeAccount: (id: string) => boolean;
   getAccountLabel: (accountId: string) => string;
+  replaceState: (next: HouseholdState) => void;
 }
 
 const HouseholdContext = createContext<HouseholdContextValue | null>(null);
@@ -190,6 +191,10 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     [state.accounts]
   );
 
+  const replaceState = useCallback((next: HouseholdState) => {
+    setState(next);
+  }, []);
+
   const addHolding = useCallback((holding: Omit<Holding, 'id'>) => {
     setState((s) => {
       let next: HouseholdState = {
@@ -304,6 +309,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       updateAccount,
       removeAccount,
       getAccountLabel: resolveAccountLabel,
+      replaceState,
     }),
     [
       state,
@@ -329,6 +335,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       updateAccount,
       removeAccount,
       resolveAccountLabel,
+      replaceState,
     ]
   );
 
