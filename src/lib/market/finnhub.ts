@@ -1,3 +1,5 @@
+import { fetchCryptoQuote } from './crypto';
+
 export interface Quote {
   symbol: string;
   price: number;
@@ -53,21 +55,51 @@ export async function fetchQuote(symbol: string, apiKey: string): Promise<Quote>
 
 export async function fetchQuotes(
   symbols: string[],
-  apiKey: string
+  apiKey: string,
+  cryptoTickers: Set<string> = new Set()
 ): Promise<Map<string, Quote>> {
   const unique = [...new Set(symbols.map((s) => s.toUpperCase()))];
   const results = new Map<string, Quote>();
+
   await Promise.all(
     unique.map(async (sym) => {
+      if (cryptoTickers.has(sym)) {
+        try {
+          const q = await fetchCryptoQuote(sym, apiKey);
+          results.set(sym, q);
+        } catch {
+          /* skip */
+        }
+        return;
+      }
       try {
         const q = await fetchQuote(sym, apiKey);
         results.set(sym, q);
       } catch {
-        /* skip missing */
+        try {
+          const q = await fetchCryptoQuote(sym, apiKey);
+          results.set(sym, q);
+        } catch {
+          /* skip */
+        }
       }
     })
   );
   return results;
+}
+
+/** Symbols held in crypto accounts */
+export function cryptoTickersFromHoldings(
+  holdings: { symbol: string; accountId: string }[],
+  accountKindById: Map<string, string>
+): Set<string> {
+  const set = new Set<string>();
+  for (const h of holdings) {
+    if (accountKindById.get(h.accountId) === 'crypto') {
+      set.add(h.symbol.toUpperCase());
+    }
+  }
+  return set;
 }
 
 export async function fetchMarketNews(apiKey: string, limit = 12): Promise<NewsItem[]> {

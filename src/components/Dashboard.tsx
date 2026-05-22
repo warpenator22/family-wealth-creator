@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
 import { formatGBP } from '../lib/finance';
+import { valueForHolding } from '../lib/market/holdingValue';
 import { formatPct, formatUsd } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
 import { DailyRitual } from './DailyRitual';
 import { UserSwitcher } from './UserSwitcher';
-
-const FX_GBP_USD = 0.79;
 
 export function Dashboard() {
   const {
@@ -33,14 +32,10 @@ export function Dashboard() {
 
     for (const h of state.holdings) {
       const q = quotes.get(h.symbol.toUpperCase());
-      const costBasisGbp = h.costGbp;
-      costGbp += costBasisGbp;
-      const valueInGbp =
-        q && h.shares > 0 ? h.shares * q.price * FX_GBP_USD : costBasisGbp;
-      valueGbp += valueInGbp;
-      if (q && h.shares > 0) {
-        dayChangeGbp += h.shares * q.change * FX_GBP_USD;
-      }
+      const v = valueForHolding(h.shares, h.costGbp, q);
+      costGbp += v.costGbp;
+      valueGbp += v.valueGbp;
+      dayChangeGbp += v.dayChangeGbp;
     }
 
     return {
@@ -148,29 +143,38 @@ export function Dashboard() {
           <div className="quote-grid">
             {state.holdings.map((h) => {
               const q = quotes.get(h.symbol.toUpperCase());
-              const valueUsd = q ? h.shares * q.price : 0;
               const acct = state.accounts.find((a) => a.id === h.accountId);
+              const isCrypto = acct?.kind === 'crypto';
+              const v = valueForHolding(h.shares, h.costGbp, q);
+              const qtyLabel = isCrypto ? 'units' : 'shares';
+
               return (
-                <div key={h.id} className="quote-card">
+                <div key={h.id} className={`quote-card ${isCrypto ? 'crypto-holding' : ''}`}>
                   <div className="quote-card-top">
                     <span className="quote-sym">{h.symbol}</span>
                     <span className="quote-account">{getAccountLabel(h.accountId)}</span>
                   </div>
                   <span className="quote-price">
-                    {acct?.kind === 'crypto'
-                      ? '—'
-                      : q
-                        ? formatUsd(q.price)
-                        : '—'}
+                    {q ? formatUsd(q.price) : 'No live price'}
                   </span>
                   {q && (
                     <span className={`quote-chg ${q.change >= 0 ? 'up' : 'down'}`}>
-                      {formatUsd(q.change)} ({formatPct(q.changePercent)})
+                      {formatUsd(q.change)} ({formatPct(q.changePercent)}) today
                     </span>
                   )}
                   <span className="quote-meta">
-                    {h.shares} shares · cost {formatGBP(h.costGbp)}
-                    {valueUsd > 0 && ` · ~${formatGBP(valueUsd * FX_GBP_USD)}`}
+                    {h.shares} {qtyLabel} · cost {formatGBP(v.costGbp)}
+                    {v.hasLivePrice && (
+                      <>
+                        {' '}
+                        · value {formatGBP(v.valueGbp)}
+                        <span className={v.gainGbp >= 0 ? ' up' : ' down'}>
+                          {' '}
+                          · P/L {formatGBP(v.gainGbp)} ({v.gainPct >= 0 ? '+' : ''}
+                          {v.gainPct.toFixed(1)}%)
+                        </span>
+                      </>
+                    )}
                   </span>
                 </div>
               );

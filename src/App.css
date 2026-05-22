@@ -1096,6 +1096,21 @@
   gap: 0.2rem;
 }
 
+.quote-card.crypto-holding {
+  border-color: color-mix(in srgb, #c47a3a 45%, var(--border));
+}
+
+.holdings-chg,
+.holdings-pl {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.holdings-pl {
+  margin-top: 0.15rem;
+}
+
 .quote-card-top {
   display: flex;
   justify-content: space-between;

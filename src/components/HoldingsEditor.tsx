@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
+import { formatGBP } from '../lib/finance';
+import { valueForHolding } from '../lib/market/holdingValue';
+import { formatPct, formatUsd } from '../lib/market/finnhub';
+import { useMarketIntel } from '../hooks/useMarketIntel';
 import { UserSwitcher } from './UserSwitcher';
 
 export function HoldingsEditor() {
   const { state, activeMember, addHolding, removeHolding, addToWatchlist, getAccountLabel } =
     useHousehold();
+  const { quotes } = useMarketIntel();
   const [symbol, setSymbol] = useState('');
   const [shares, setShares] = useState('');
   const [costGbp, setCostGbp] = useState('');
@@ -121,6 +126,8 @@ export function HoldingsEditor() {
             <th>Account</th>
             <th>Qty</th>
             <th>Cost</th>
+            <th>Live</th>
+            <th>Value / P/L</th>
             <th>Logged by</th>
             <th></th>
           </tr>
@@ -128,13 +135,15 @@ export function HoldingsEditor() {
         <tbody>
           {state.holdings.length === 0 && (
             <tr>
-              <td colSpan={6} className="empty-hint">
+              <td colSpan={8} className="empty-hint">
                 Example: BTC · 0.5 · £20,000 · Crypto — or MSFT · 4 · £1,200 · Kids&apos; ISA
               </td>
             </tr>
           )}
           {state.holdings.map((h) => {
             const member = state.members.find((m) => m.id === h.memberId);
+            const q = quotes.get(h.symbol.toUpperCase());
+            const v = valueForHolding(h.shares, h.costGbp, q);
             return (
               <tr key={h.id}>
                 <td className="col-ticker">{h.symbol}</td>
@@ -143,6 +152,31 @@ export function HoldingsEditor() {
                 <td className="col-num">
                   {h.currency === 'USD' ? '$' : '£'}
                   {h.costGbp.toLocaleString()}
+                </td>
+                <td className="col-num">
+                  {q ? (
+                    <>
+                      {formatUsd(q.price)}
+                      <span className={`holdings-chg ${q.change >= 0 ? 'up' : 'down'}`}>
+                        {formatPct(q.changePercent)}
+                      </span>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="col-num">
+                  {v.hasLivePrice ? (
+                    <span className={v.gainGbp >= 0 ? 'up' : 'down'}>
+                      {formatGBP(v.valueGbp)}
+                      <span className="holdings-pl">
+                        {formatGBP(v.gainGbp)} ({v.gainPct >= 0 ? '+' : ''}
+                        {v.gainPct.toFixed(1)}%)
+                      </span>
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </td>
                 <td>{member?.name ?? '—'}</td>
                 <td>

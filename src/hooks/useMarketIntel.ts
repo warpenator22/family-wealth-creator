@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  cryptoTickersFromHoldings,
   fetchCompanyNews,
   fetchMarketNews,
   fetchQuotes,
@@ -44,8 +45,16 @@ export function useMarketIntel(): MarketIntel {
     abortRef.current = false;
 
     try {
+      const accountKindById = new Map(
+        state.accounts.map((a) => [a.id, a.kind])
+      );
+      const cryptoTickers = cryptoTickersFromHoldings(
+        state.holdings,
+        accountKindById
+      );
+
       const [quoteMap, generalNews] = await Promise.all([
-        fetchQuotes(allSymbols, key),
+        fetchQuotes(allSymbols, key, cryptoTickers),
         fetchMarketNews(key, 10),
       ]);
 
@@ -68,7 +77,7 @@ export function useMarketIntel(): MarketIntel {
     } finally {
       if (!abortRef.current) setLoading(false);
     }
-  }, [state.finnhubApiKey, allSymbols, state.holdings]);
+  }, [state.finnhubApiKey, allSymbols, state.holdings, state.accounts]);
 
   useEffect(() => {
     refresh();
