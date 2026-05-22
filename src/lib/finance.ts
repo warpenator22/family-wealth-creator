@@ -84,6 +84,7 @@ export function incomeFromPot(
 }
 
 export function formatGBP(n: number, compact = false): string {
+  if (!Number.isFinite(n)) return '—';
   if (compact && Math.abs(n) >= 1_000_000) {
     return `£${(n / 1_000_000).toFixed(2)}m`;
   }

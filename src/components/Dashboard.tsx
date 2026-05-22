@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
 import { formatGBP } from '../lib/finance';
 import { valueForHolding } from '../lib/market/holdingValue';
-import { formatPct, formatUsd } from '../lib/market/finnhub';
+import { formatPct, formatUsd, isUsableQuote } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
 import { DailyRitual } from './DailyRitual';
 import { UserSwitcher } from './UserSwitcher';
@@ -156,9 +156,9 @@ export function Dashboard() {
                     <span className="quote-account">{getAccountLabel(h.accountId)}</span>
                   </div>
                   <span className="quote-price">
-                    {q ? formatUsd(q.price) : 'No live price'}
+                    {isUsableQuote(q) ? formatUsd(q.price) : 'No live price'}
                   </span>
-                  {q && (
+                  {isUsableQuote(q) && (
                     <span className={`quote-chg ${q.change >= 0 ? 'up' : 'down'}`}>
                       {formatUsd(q.change)} ({formatPct(q.changePercent)}) today
                     </span>
@@ -192,8 +192,10 @@ export function Dashboard() {
             return (
               <div key={sym} className="quote-card compact">
                 <span className="quote-sym">{sym}</span>
-                <span className="quote-price">{q ? formatUsd(q.price) : '—'}</span>
-                {q && (
+                <span className="quote-price">
+                  {isUsableQuote(q) ? formatUsd(q.price) : '—'}
+                </span>
+                {isUsableQuote(q) && (
                   <span className={`quote-chg ${q.change >= 0 ? 'up' : 'down'}`}>
                     {formatPct(q.changePercent)}
                   </span>

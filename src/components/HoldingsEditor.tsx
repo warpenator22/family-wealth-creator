@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
 import { formatGBP } from '../lib/finance';
 import { valueForHolding } from '../lib/market/holdingValue';
-import { formatPct, formatUsd } from '../lib/market/finnhub';
+import { formatPct, formatUsd, isUsableQuote } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
 import { UserSwitcher } from './UserSwitcher';
 
@@ -33,8 +33,8 @@ export function HoldingsEditor() {
       memberId: activeMember.id,
       accountId,
       symbol: sym,
-      shares: Number(shares) || 0,
-      costGbp: Number(costGbp) || 0,
+      shares: Math.max(0, Number(shares) || 0),
+      costGbp: Math.max(0, Number(costGbp) || 0),
       currency: selectedAccount?.currency === 'USD' ? 'USD' : 'GBP',
       boughtAt: new Date().toISOString().slice(0, 10),
       notes: notes || undefined,
@@ -158,7 +158,7 @@ export function HoldingsEditor() {
                   {h.costGbp.toLocaleString()}
                 </td>
                 <td className="col-num">
-                  {q ? (
+                  {isUsableQuote(q) ? (
                     <>
                       {formatUsd(q.price)}
                       <span className={`holdings-chg ${q.change >= 0 ? 'up' : 'down'}`}>
@@ -166,7 +166,9 @@ export function HoldingsEditor() {
                       </span>
                     </>
                   ) : (
-                    '—'
+                    <span className="holdings-chg" title="No Finnhub quote (common for US mutual funds)">
+                      No live price
+                    </span>
                   )}
                 </td>
                 <td className="col-num">

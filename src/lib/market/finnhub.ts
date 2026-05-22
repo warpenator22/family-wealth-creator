@@ -28,30 +28,49 @@ function requireKey(apiKey: string): void {
   if (!apiKey.trim()) throw new Error('FINNHUB_KEY_MISSING');
 }
 
+/** True when quote has a usable live price (guards mutual funds / bad API rows). */
+export function isUsableQuote(q: Quote | undefined): q is Quote {
+  return (
+    !!q &&
+    Number.isFinite(q.price) &&
+    q.price > 0 &&
+    Number.isFinite(q.change) &&
+    Number.isFinite(q.changePercent)
+  );
+}
+
+function parseStockQuote(symbol: string, data: Record<string, unknown>): Quote {
+  const price = Number(data.c);
+  const prevClose = Number(data.pc);
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error(`No data for ${symbol}`);
+  }
+  const prev =
+    Number.isFinite(prevClose) && prevClose > 0 ? prevClose : price;
+  const change = price - prev;
+  const changePercent = prev > 0 ? (change / prev) * 100 : 0;
+  const high = Number(data.h);
+  const low = Number(data.l);
+  return {
+    symbol,
+    price,
+    change: Number.isFinite(change) ? change : 0,
+    changePercent: Number.isFinite(changePercent) ? changePercent : 0,
+    high: Number.isFinite(high) && high > 0 ? high : price,
+    low: Number.isFinite(low) && low > 0 ? low : price,
+    prevClose: prev,
+    updatedAt: Date.now(),
+  };
+}
+
 export async function fetchQuote(symbol: string, apiKey: string): Promise<Quote> {
   requireKey(apiKey);
   const res = await fetch(
     `${BASE}/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`
   );
   if (!res.ok) throw new Error(`Quote failed for ${symbol}`);
-  const data = await res.json();
-  if (data.c === 0 && data.pc === 0) {
-    throw new Error(`No data for ${symbol}`);
-  }
-  const price = data.c as number;
-  const prevClose = data.pc as number;
-  const change = price - prevClose;
-  const changePercent = prevClose ? (change / prevClose) * 100 : 0;
-  return {
-    symbol,
-    price,
-    change,
-    changePercent,
-    high: data.h,
-    low: data.l,
-    prevClose,
-    updatedAt: Date.now(),
-  };
+  const data = (await res.json()) as Record<string, unknown>;
+  return parseStockQuote(symbol, data);
 }
 
 export async function fetchQuotes(
@@ -140,6 +159,7 @@ export async function fetchCompanyNews(
 }
 
 export function formatUsd(n: number): string {
+  if (!Number.isFinite(n)) return '—';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -148,6 +168,7 @@ export function formatUsd(n: number): string {
 }
 
 export function formatPct(n: number): string {
+  if (!Number.isFinite(n)) return '—';
   const sign = n >= 0 ? '+' : '';
   return `${sign}${n.toFixed(2)}%`;
 }

@@ -1,4 +1,4 @@
-import type { Quote } from './finnhub';
+import { isUsableQuote, type Quote } from './finnhub';
 
 const FX_GBP_USD = 0.79;
 
@@ -17,7 +17,7 @@ export function valueForHolding(
   quote: Quote | undefined
 ): HoldingValue {
   const cost = costGbp;
-  if (!quote || shares <= 0) {
+  if (!isUsableQuote(quote) || shares <= 0 || !Number.isFinite(costGbp)) {
     return {
       costGbp: cost,
       valueGbp: cost,
