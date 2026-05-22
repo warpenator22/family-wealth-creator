@@ -1,4 +1,5 @@
-import { fetchCryptoQuote } from './crypto';
+import { fetchCoinGeckoQuotes } from './coingecko';
+import { fetchCryptoQuote, fetchCryptoQuotesThrottled } from './crypto';
 
 export interface Quote {
   symbol: string;
@@ -61,17 +62,20 @@ export async function fetchQuotes(
   const unique = [...new Set(symbols.map((s) => s.toUpperCase()))];
   const results = new Map<string, Quote>();
 
+  const cryptoList = unique.filter((s) => cryptoTickers.has(s));
+  const stockList = unique.filter((s) => !cryptoTickers.has(s));
+
+  const cryptoMap = await fetchCryptoQuotesThrottled(cryptoList, apiKey);
+  for (const [sym, q] of cryptoMap) results.set(sym, q);
+
+  const missingCrypto = cryptoList.filter((s) => !results.has(s));
+  if (missingCrypto.length > 0) {
+    const fallback = await fetchCoinGeckoQuotes(missingCrypto);
+    for (const [sym, q] of fallback) results.set(sym, q);
+  }
+
   await Promise.all(
-    unique.map(async (sym) => {
-      if (cryptoTickers.has(sym)) {
-        try {
-          const q = await fetchCryptoQuote(sym, apiKey);
-          results.set(sym, q);
-        } catch {
-          /* skip */
-        }
-        return;
-      }
+    stockList.map(async (sym) => {
       try {
         const q = await fetchQuote(sym, apiKey);
         results.set(sym, q);
@@ -85,6 +89,13 @@ export async function fetchQuotes(
       }
     })
   );
+
+  const maybeCrypto = stockList.filter((s) => !results.has(s));
+  if (maybeCrypto.length > 0) {
+    const fallback = await fetchCoinGeckoQuotes(maybeCrypto);
+    for (const [sym, q] of fallback) results.set(sym, q);
+  }
+
   return results;
 }
 
