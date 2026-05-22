@@ -5,6 +5,7 @@ import { AccountsManager } from './components/AccountsManager';
 import { HoldingsEditor } from './components/HoldingsEditor';
 import { NetWorthOverview } from './components/NetWorthOverview';
 import { PortfolioCard } from './components/PortfolioCard';
+import { CloudSyncBadge } from './components/CloudSyncBadge';
 import { Settings } from './components/Settings';
 import { DEFAULT_PLANS } from './lib/portfolios';
 import './App.css';
@@ -45,6 +46,7 @@ function App() {
           <p className="lede">
             Daily market intel, shared holdings, and long-term plans for the Warp family.
           </p>
+          <CloudSyncBadge />
         </div>
         <nav className="app-nav" aria-label="Main">
           {navItems.map((item) => (

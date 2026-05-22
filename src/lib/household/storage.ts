@@ -81,6 +81,13 @@ export function mergeHouseholdState(parsed: Partial<HouseholdState>): HouseholdS
       typeof parsed.autoRefreshMinutes === 'number'
         ? parsed.autoRefreshMinutes
         : defaults.autoRefreshMinutes,
+    syncKey: typeof parsed.syncKey === 'string' ? parsed.syncKey : defaults.syncKey,
+    syncRevision:
+      typeof parsed.syncRevision === 'number' ? parsed.syncRevision : defaults.syncRevision,
+    lastCloudSyncAt:
+      typeof parsed.lastCloudSyncAt === 'string'
+        ? parsed.lastCloudSyncAt
+        : defaults.lastCloudSyncAt,
   };
 }
 

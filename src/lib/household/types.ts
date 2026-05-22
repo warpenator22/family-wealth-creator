@@ -34,6 +34,12 @@ export interface HouseholdState {
   ritualCompletions: Record<string, Record<string, boolean>>;
   /** memberId -> ISO timestamp last meaningful action */
   memberLastActive: Record<string, string>;
+  /** SHA-256 hex of family sync passphrase — links devices to one cloud row */
+  syncKey?: string;
+  /** Bumped on each local edit; compared with cloud for merge */
+  syncRevision?: number;
+  /** ISO timestamp of last successful cloud sync */
+  lastCloudSyncAt?: string;
 }
 
 export const DEFAULT_MEMBERS: HouseholdMember[] = [

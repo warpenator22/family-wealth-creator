@@ -24,3 +24,9 @@ Open the URL shown in the terminal (usually http://localhost:5173).
 ```bash
 npm run build
 ```
+
+## Sync across phones
+
+Holdings and accounts can sync via **Supabase** so Richard and Erica see the same data. Setup: [`supabase/README.md`](./supabase/README.md).
+
+In the app: **Settings → Cloud sync** → shared family phrase on each device.

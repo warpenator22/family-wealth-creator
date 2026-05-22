@@ -16,9 +16,16 @@ export function Settings() {
     updateMemberName,
     setWatchlist,
     replaceState,
+    cloudSyncConfigured,
+    cloudSyncStatus,
+    cloudSyncError,
+    enableCloudSync,
+    disableCloudSync,
+    syncNow,
   } = useHousehold();
   const [key, setKey] = useState(state.finnhubApiKey);
   const [watchlistText, setWatchlistText] = useState(state.watchlist.join(', '));
+  const [syncPhrase, setSyncPhrase] = useState('');
   const [dataMessage, setDataMessage] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const storage = householdStorageSummary(state);
@@ -39,9 +46,86 @@ export function Settings() {
       <div className="section-heading">
         <h2>Settings</h2>
         <p>
-          Saved in <strong>this browser only</strong> (not on a server). The same URL on another
-          phone, private browsing, or after clearing site data starts empty.
+          Holdings sync across phones when <strong>cloud sync</strong> is enabled below. Each device
+          also keeps a local copy and backup.
         </p>
+      </div>
+
+      <div className="settings-block settings-sync">
+        <h3>Cloud sync (Richard &amp; Erica)</h3>
+        {!cloudSyncConfigured ? (
+          <p className="settings-hint">
+            Supabase is not configured on this deployment yet. Add{' '}
+            <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> in Vercel, run{' '}
+            <code>supabase/schema.sql</code>, then redeploy.
+          </p>
+        ) : state.syncKey ? (
+          <>
+            <p className="settings-hint">
+              <strong>Linked.</strong> Richard and Erica use the same family sync phrase on every
+              device. Status: <strong>{cloudSyncStatus}</strong>
+              {state.lastCloudSyncAt && (
+                <>
+                  {' '}
+                  · last sync {new Date(state.lastCloudSyncAt).toLocaleString()}
+                </>
+              )}
+              .
+            </p>
+            {cloudSyncError && (
+              <p className="settings-hint settings-recover-hint">{cloudSyncError}</p>
+            )}
+            <div className="settings-data-actions">
+              <button type="button" className="btn-secondary" onClick={() => void syncNow()}>
+                Sync now
+              </button>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  disableCloudSync();
+                  setDataMessage('Cloud sync unlinked on this device (cloud copy kept).');
+                }}
+              >
+                Unlink this device
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="settings-hint">
+              Choose a shared passphrase (8+ characters). Enter the <strong>same phrase</strong> on
+              your phone, Erica&apos;s phone, and your laptop — not your ii password.
+            </p>
+            <label>
+              Family sync phrase
+              <input
+                type="password"
+                value={syncPhrase}
+                onChange={(e) => setSyncPhrase(e.target.value)}
+                placeholder="e.g. Warp-HQ-2026-shared"
+                autoComplete="off"
+              />
+            </label>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={async () => {
+                try {
+                  await enableCloudSync(syncPhrase);
+                  setSyncPhrase('');
+                  setDataMessage('Cloud sync enabled — holdings will sync across devices.');
+                } catch (e) {
+                  setDataMessage(
+                    e instanceof Error ? e.message : 'Could not enable cloud sync.'
+                  );
+                }
+              }}
+            >
+              Enable cloud sync
+            </button>
+          </>
+        )}
       </div>
 
       <div className="settings-block settings-data">
@@ -172,8 +256,7 @@ export function Settings() {
       <div className="settings-block">
         <h3>Warp household members</h3>
         <p className="settings-hint">
-          Names are saved in this browser only. Erica must open the app on her phone and
-          check this section too — or she will still see old labels until she does.
+          With cloud sync on, names update everywhere once saved.
         </p>
         {state.members.map((m) => (
           <label key={m.id}>
