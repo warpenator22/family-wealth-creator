@@ -13,6 +13,7 @@ export interface Holding {
   symbol: string;
   name?: string;
   shares: number;
+  /** Total cost in `currency` (legacy field name costGbp) */
   costGbp: number;
   currency: 'GBP' | 'USD';
   boughtAt: string;

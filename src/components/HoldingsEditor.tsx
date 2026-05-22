@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
-import { formatGBP } from '../lib/finance';
+import { formatMoney } from '../lib/finance';
 import { valueForHolding } from '../lib/market/holdingValue';
 import { formatPct, formatUsd, isUsableQuote } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
@@ -58,7 +58,8 @@ export function HoldingsEditor() {
       <UserSwitcher />
       <p className="holdings-member-hint">
         Select <strong>Joint</strong> for accounts in both your names; Richard or Erica for
-        individual wrappers.
+        individual wrappers. For <strong>Schwab / US brokerage</strong>, enter the dollar cost
+        Schwab shows — not pounds.
       </p>
 
       {state.accounts.length === 0 ? (
@@ -89,12 +90,12 @@ export function HoldingsEditor() {
               />
             </label>
             <label>
-              Cost ({selectedAccount?.currency === 'USD' ? '$' : '£'})
+              Total cost ({selectedAccount?.currency === 'USD' ? 'USD $' : 'GBP £'})
               <input
                 type="number"
                 value={costGbp}
                 onChange={(e) => setCostGbp(e.target.value)}
-                placeholder="1200"
+                placeholder={selectedAccount?.currency === 'USD' ? '10000' : '1200'}
                 required
               />
             </label>
@@ -147,16 +148,13 @@ export function HoldingsEditor() {
           {state.holdings.map((h) => {
             const member = state.members.find((m) => m.id === h.memberId);
             const q = quotes.get(h.symbol.toUpperCase());
-            const v = valueForHolding(h.shares, h.costGbp, q);
+            const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
             return (
               <tr key={h.id}>
                 <td className="col-ticker">{h.symbol}</td>
                 <td>{getAccountLabel(h.accountId)}</td>
                 <td className="col-num">{h.shares}</td>
-                <td className="col-num">
-                  {h.currency === 'USD' ? '$' : '£'}
-                  {h.costGbp.toLocaleString()}
-                </td>
+                <td className="col-num">{formatMoney(h.costGbp, h.currency)}</td>
                 <td className="col-num">
                   {isUsableQuote(q) ? (
                     <>
@@ -173,15 +171,15 @@ export function HoldingsEditor() {
                 </td>
                 <td className="col-num">
                   {v.hasLivePrice ? (
-                    <span className={v.gainGbp >= 0 ? 'up' : 'down'}>
-                      {formatGBP(v.valueGbp)}
+                    <span className={v.gainNative >= 0 ? 'up' : 'down'}>
+                      {formatMoney(v.valueNative, v.currency)}
                       <span className="holdings-pl">
-                        {formatGBP(v.gainGbp)} ({v.gainPct >= 0 ? '+' : ''}
+                        {formatMoney(v.gainNative, v.currency)} ({v.gainPct >= 0 ? '+' : ''}
                         {v.gainPct.toFixed(1)}%)
                       </span>
                     </span>
                   ) : (
-                    '—'
+                    <span className="holdings-pl">At cost ({formatMoney(v.costNative, v.currency)})</span>
                   )}
                 </td>
                 <td>{member?.name ?? '—'}</td>

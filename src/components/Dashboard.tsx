@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
-import { formatGBP } from '../lib/finance';
+import { formatGBP, formatMoney } from '../lib/finance';
 import { valueForHolding } from '../lib/market/holdingValue';
 import { formatPct, formatUsd, isUsableQuote } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
@@ -32,7 +32,7 @@ export function Dashboard() {
 
     for (const h of state.holdings) {
       const q = quotes.get(h.symbol.toUpperCase());
-      const v = valueForHolding(h.shares, h.costGbp, q);
+      const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
       costGbp += v.costGbp;
       valueGbp += v.valueGbp;
       dayChangeGbp += v.dayChangeGbp;
@@ -146,7 +146,7 @@ export function Dashboard() {
               const q = quotes.get(h.symbol.toUpperCase());
               const acct = state.accounts.find((a) => a.id === h.accountId);
               const isCrypto = acct?.kind === 'crypto';
-              const v = valueForHolding(h.shares, h.costGbp, q);
+              const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
               const qtyLabel = isCrypto ? 'units' : 'shares';
 
               return (
@@ -164,17 +164,19 @@ export function Dashboard() {
                     </span>
                   )}
                   <span className="quote-meta">
-                    {h.shares} {qtyLabel} · cost {formatGBP(v.costGbp)}
-                    {v.hasLivePrice && (
+                    {h.shares} {qtyLabel} · cost {formatMoney(v.costNative, h.currency)}
+                    {v.hasLivePrice ? (
                       <>
                         {' '}
-                        · value {formatGBP(v.valueGbp)}
-                        <span className={v.gainGbp >= 0 ? ' up' : ' down'}>
+                        · value {formatMoney(v.valueNative, h.currency)}
+                        <span className={v.gainNative >= 0 ? ' up' : ' down'}>
                           {' '}
-                          · P/L {formatGBP(v.gainGbp)} ({v.gainPct >= 0 ? '+' : ''}
+                          · P/L {formatMoney(v.gainNative, h.currency)} ({v.gainPct >= 0 ? '+' : ''}
                           {v.gainPct.toFixed(1)}%)
                         </span>
                       </>
+                    ) : (
+                      <> · no live price (e.g. US mutual fund)</>
                     )}
                   </span>
                 </div>

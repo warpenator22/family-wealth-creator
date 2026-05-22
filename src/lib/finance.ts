@@ -83,6 +83,28 @@ export function incomeFromPot(
   return (pot * (withdrawalRatePercent / 100)) / 12;
 }
 
+export function formatMoney(
+  n: number,
+  currency: 'GBP' | 'USD',
+  compact = false
+): string {
+  if (!Number.isFinite(n)) return '—';
+  if (currency === 'USD') {
+    if (compact && Math.abs(n) >= 1_000_000) {
+      return `$${(n / 1_000_000).toFixed(2)}m`;
+    }
+    if (compact && Math.abs(n) >= 10_000) {
+      return `$${(n / 1_000).toFixed(0)}k`;
+    }
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(n);
+  }
+  return formatGBP(n, compact);
+}
+
 export function formatGBP(n: number, compact = false): string {
   if (!Number.isFinite(n)) return '—';
   if (compact && Math.abs(n) >= 1_000_000) {
