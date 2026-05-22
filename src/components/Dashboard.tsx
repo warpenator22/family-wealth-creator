@@ -121,7 +121,8 @@ export function Dashboard() {
       <section className="dash-section">
         <h2>Today&apos;s Warp family note</h2>
         <p className="section-hint">
-          Logged as <strong>{activeMember.name}</strong> — visible to both of you.
+          Logged as <strong>{activeMember.name}</strong> — household data is shared with cloud
+          sync enabled.
         </p>
         <textarea
           className="daily-note"

@@ -56,6 +56,10 @@ export function HoldingsEditor() {
         </p>
       </div>
       <UserSwitcher />
+      <p className="holdings-member-hint">
+        Select <strong>Joint</strong> for accounts in both your names; Richard or Erica for
+        individual wrappers.
+      </p>
 
       {state.accounts.length === 0 ? (
         <p className="empty-hint">

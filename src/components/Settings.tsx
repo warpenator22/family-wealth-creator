@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
+import { MEMBER_SLOT_LABELS } from '../lib/household/types';
 import {
   exportHouseholdJson,
   getHouseholdBackup,
@@ -258,13 +259,17 @@ export function Settings() {
         <p className="settings-hint">
           With cloud sync on, names update everywhere once saved.
         </p>
+        <p className="settings-hint">
+          Use <strong>Joint</strong> when logging holdings in both your names (shared ISAs,
+          joint GIA, etc.).
+        </p>
         {state.members.map((m) => (
           <label key={m.id}>
-            {m.id === 'member-1' ? 'Richard' : 'Erica'} (display name)
+            {MEMBER_SLOT_LABELS[m.id] ?? m.name} (display name)
             <input
               value={m.name}
               onChange={(e) => updateMemberName(m.id, e.target.value)}
-              aria-label={m.id === 'member-1' ? 'Richard display name' : 'Erica display name'}
+              aria-label={`${MEMBER_SLOT_LABELS[m.id] ?? m.name} display name`}
             />
           </label>
         ))}

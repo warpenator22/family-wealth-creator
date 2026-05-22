@@ -45,7 +45,15 @@ export interface HouseholdState {
 export const DEFAULT_MEMBERS: HouseholdMember[] = [
   { id: 'member-1', name: 'Richard', color: '#6b9fd4' },
   { id: 'member-2', name: 'Erica', color: '#3d9b6e' },
+  { id: 'member-3', name: 'Joint', color: '#c9a227' },
 ];
+
+/** Default slot label in Settings (display name remains editable) */
+export const MEMBER_SLOT_LABELS: Record<string, string> = {
+  'member-1': 'Richard',
+  'member-2': 'Erica',
+  'member-3': 'Joint',
+};
 
 export const DEFAULT_WATCHLIST = [
   'MSFT',

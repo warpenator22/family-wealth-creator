@@ -1029,6 +1029,7 @@
 
 .user-switcher {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
@@ -1250,6 +1251,13 @@
 .holdings-editor,
 .settings-panel {
   margin-bottom: 2rem;
+}
+
+.holdings-member-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 1rem;
+  max-width: 52ch;
 }
 
 .holding-form {
