@@ -31,7 +31,14 @@ function normalizeAccounts(saved: HouseholdAccount[] | undefined): HouseholdAcco
   const byId = new Map<string, HouseholdAccount>();
   for (const def of DEFAULT_ACCOUNTS) {
     const match = saved.find((a) => a.id === def.id);
-    byId.set(def.id, match ? { ...def, ...match, id: def.id } : def);
+    const merged = match ? { ...def, ...match, id: def.id } : def;
+    if (def.id === 'kids-isa' && match?.label === "Kids' ISA") {
+      merged.label = def.label;
+      merged.allocationChannel = def.allocationChannel;
+      merged.suggestedModelId = def.suggestedModelId;
+      merged.notes = def.notes;
+    }
+    byId.set(def.id, merged);
   }
   for (const a of saved) {
     if (!byId.has(a.id)) byId.set(a.id, a);

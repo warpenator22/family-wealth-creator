@@ -19,6 +19,8 @@ export interface HouseholdAccount {
   platform?: string;
   /** Fund manager model suggestion */
   suggestedModelId?: string;
+  /** Use US stock lines in fund manager (e.g. UK ISA for US citizens avoiding UCITS/PFIC) */
+  allocationChannel?: AccountChannel;
   /** Planning default for fund manager pot size */
   defaultPot?: number;
   notes?: string;
@@ -38,23 +40,28 @@ export const ACCOUNT_KIND_LABELS: Record<AccountKind, string> = {
 export const DEFAULT_ACCOUNTS: HouseholdAccount[] = [
   {
     id: 'kids-isa',
-    label: "Kids' ISA",
+    label: 'Your ISA (Kids Fund)',
     kind: 'isa',
     currency: 'GBP',
     channel: 'uk',
+    allocationChannel: 'us',
     platform: 'Interactive Investors',
-    suggestedModelId: 'growth-aggressive',
+    suggestedModelId: 'isa-us-citizen-growth',
     defaultPot: 20_000,
+    notes:
+      'Adult Stocks & Shares ISA in your name, earmarked for the kids’ £100k goal. US-person: individual stocks only (no UCITS/PFIC).',
   },
   {
     id: 'personal-isa',
-    label: 'Your ISA',
+    label: 'Your ISA (Personal)',
     kind: 'isa',
     currency: 'GBP',
     channel: 'uk',
+    allocationChannel: 'us',
     platform: 'Interactive Investors',
-    suggestedModelId: 'growth-aggressive',
+    suggestedModelId: 'isa-us-citizen-growth',
     defaultPot: 50_000,
+    notes: 'Your £300k ISA goal. Same PFIC-safe stock approach as the Kids Fund ISA.',
   },
   {
     id: 'personal-sipp',

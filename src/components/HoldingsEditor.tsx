@@ -136,7 +136,7 @@ export function HoldingsEditor() {
           {state.holdings.length === 0 && (
             <tr>
               <td colSpan={8} className="empty-hint">
-                Example: BTC · 0.5 · £20,000 · Crypto — or MSFT · 4 · £1,200 · Kids&apos; ISA
+                Example: BTC · 0.5 · £20,000 · Crypto — or MSFT · 4 · £1,200 · Your ISA (Kids Fund)
               </td>
             </tr>
           )}

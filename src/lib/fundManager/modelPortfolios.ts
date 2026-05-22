@@ -129,14 +129,76 @@ export const MODEL_PORTFOLIOS: ModelPortfolio[] = [
     ],
   },
   {
-    id: 'growth-aggressive',
-    name: 'Aggressive Growth',
+    id: 'isa-us-citizen-growth',
+    name: 'ISA Growth (US-person, PFIC-safe)',
     category: 'equity',
-    description: 'Matches your ISA goals — global core plus size and EM tilts.',
+    description:
+      'Six-name global growth basket for UK ISAs when you are US citizens — no Irish UCITS.',
+    mirrors: 'Global all-cap equity via US + ADR stocks (not VWRP)',
+    riskLevel: 'high',
+    horizonYears: '5–10',
+    linkedPlanId: 'kids-isa',
+    uk: [],
+    us: [
+      {
+        ticker: 'MSFT',
+        name: 'Microsoft',
+        weight: 35,
+        sector: 'Technology',
+        note: 'Core quality compounder',
+      },
+      {
+        ticker: 'GOOGL',
+        name: 'Alphabet Class A',
+        weight: 25,
+        sector: 'Technology',
+        note: 'Search / cloud growth',
+      },
+      {
+        ticker: 'NVDA',
+        name: 'NVIDIA',
+        weight: 15,
+        sector: 'Technology',
+        note: 'Higher volatility — size to comfort',
+      },
+      {
+        ticker: 'AVGO',
+        name: 'Broadcom',
+        weight: 10,
+        sector: 'Technology',
+        note: 'Semis + software cash flow',
+      },
+      {
+        ticker: 'ASML',
+        name: 'ASML Holding (ADR)',
+        weight: 10,
+        sector: 'Technology',
+        note: 'Non-US developed markets exposure',
+      },
+      {
+        ticker: 'COST',
+        name: 'Costco',
+        weight: 5,
+        sector: 'Consumer',
+        note: 'Defensive consumer ballast',
+      },
+    ],
+    notes: [
+      'Default for Your ISA (Kids Fund) and Your ISA (Personal) — US/UK dual citizens.',
+      'Do not use VWRP, VUSA, WSML, EIMI, or other UCITS in these ISAs (PFIC reporting).',
+      'On Interactive Investors: buy LSE-listed lines (often USD tickers, e.g. MSFT).',
+      '£20,000 example: MSFT £7k · GOOGL £5k · NVDA £3k · AVGO £2k · ASML £2k · COST £1k.',
+      'Max £20k/yr into this ISA; at ~8% plus annual top-ups, £100k in ~5 years is realistic.',
+    ],
+  },
+  {
+    id: 'growth-aggressive',
+    name: 'Aggressive Growth (UCITS — UK-only taxpayers)',
+    category: 'equity',
+    description: 'UCITS ETF mix — only if you are not subject to US PFIC rules.',
     mirrors: 'MSCI ACWI + small-cap & EM factor tilts (Wealthfront aggressive-style)',
     riskLevel: 'high',
     horizonYears: '5–15',
-    linkedPlanId: 'kids-isa',
     uk: [
       {
         ticker: 'VWRP',
@@ -180,7 +242,7 @@ export const MODEL_PORTFOLIOS: ModelPortfolio[] = [
       { ...BOND_US_NOTE, weight: 5 },
     ],
     notes: [
-      'Default for Kids ISA and Personal ISA in your wealth plan.',
+      'Not for US citizens — use “ISA Growth (US-person, PFIC-safe)” instead.',
       'US small-cap tilt is embedded in the global US mix; add WSML-equivalent only via UK UCITS.',
     ],
   },
@@ -291,9 +353,10 @@ export function getModelById(id: string): ModelPortfolio | undefined {
 }
 
 export const US_CITIZEN_CONSTRAINTS = [
-  'US-domiciled mutual funds: avoid (PFIC, punitive US tax reporting).',
-  'US-domiciled ETFs: generally treated as PFICs — avoid unless your CPA advises otherwise.',
-  'Individual US equities: typically the cleanest approach in a US brokerage.',
-  'UK UCITS ETFs in ISA/SIPP: fine for UK tax; US citizens may still owe US tax on dividends in ISAs.',
+  'Irish / UK UCITS ETFs (VWRP, VUSA, WSML, EIMI, VAGP): treated as PFICs — Form 8621; avoid in ISAs unless your CPA accepts the burden.',
+  'US-domiciled mutual funds: avoid (PFIC risk and complex reporting).',
+  'US-domiciled ETFs (e.g. VTI, SPY): usually not PFICs, but UK wrappers still do not shield US tax on worldwide income.',
+  'Individual US (and ADR) equities: cleanest default for UK ISAs when you are US persons.',
+  'Your ISA (Kids Fund) is in your name — US rules apply to you, not a Junior ISA.',
   'Report worldwide income to the IRS; consider Foreign Tax Credit for UK taxes paid.',
 ];

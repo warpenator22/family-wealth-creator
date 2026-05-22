@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
 import { accountsForFundManager } from '../lib/household/accounts';
-import { allocate, formatMoney, sumAllocated } from '../lib/fundManager/allocate';
+import {
+  allocate,
+  allocationChannelFor,
+  formatMoney,
+  sumAllocated,
+} from '../lib/fundManager/allocate';
 import {
   MODEL_PORTFOLIOS,
   US_CITIZEN_CONSTRAINTS,
@@ -38,10 +43,12 @@ export function FundManager() {
     setPot(acc.defaultPot ?? 0);
   };
 
+  const linesChannel = account ? allocationChannelFor(account) : 'uk';
+
   const rows = useMemo(() => {
     if (!account) return [];
-    return allocate(modelId, pot, account.channel);
-  }, [modelId, pot, account]);
+    return allocate(modelId, pot, account.channel, linesChannel);
+  }, [modelId, pot, account, linesChannel]);
 
   const model = getModelById(modelId);
   const allocated = sumAllocated(rows);
@@ -54,8 +61,9 @@ export function FundManager() {
       <div className="section-heading">
         <h2>Fund manager</h2>
         <p>
-          Mirror best-in-class passive portfolios. UK accounts use UCITS ETFs; US
-          brokerage uses individual equities (no US mutual funds).
+          Mirror best-in-class portfolios. US/UK citizens use individual stocks in UK
+          ISAs (PFIC-safe); UCITS models are for UK-only taxpayers. US brokerage uses
+          the stock basket too.
         </p>
       </div>
 
@@ -132,7 +140,13 @@ export function FundManager() {
               </div>
 
               <div className="fm-channel-banner">
-                {account.channel === 'uk' ? (
+                {linesChannel === 'us' && account.channel === 'uk' ? (
+                  <>
+                    <strong>PFIC-safe ISA implementation</strong> — individual US and ADR
+                    stocks on Interactive Investors (LSE). Do not buy VWRP, VUSA, or other
+                    UCITS in this wrapper.
+                  </>
+                ) : linesChannel === 'uk' ? (
                   <>
                     <strong>UK implementation</strong> — UCITS ETFs on LSE (ISA / SIPP / GIA
                     eligible). Use accumulating share classes where available.
@@ -198,10 +212,14 @@ export function FundManager() {
         <h3>Execution checklist</h3>
         <ol>
           <li>Confirm account type and remaining annual allowance (ISA £20k, SIPP £60k).</li>
-          <li>Place limit or market orders per row; prefer LSE open for UK ETFs.</li>
           <li>
-            {account?.channel === 'us'
-              ? 'Avoid adding US mutual funds or US ETFs — stick to the stock list.'
+            {linesChannel === 'us'
+              ? 'Place orders on ii (LSE); USD or GBP share classes are fine — log in Holdings.'
+              : 'Place limit or market orders per row; prefer LSE open for UK ETFs.'}
+          </li>
+          <li>
+            {linesChannel === 'us'
+              ? 'No UCITS ETFs (VWRP, EIMI, etc.) — PFIC risk for US citizens. Stocks only.'
               : 'Use accumulating (Acc) share classes to defer UK dividend tax in GIA.'}
           </li>
           <li>Rebalance when any line drifts more than 5% from target weight.</li>

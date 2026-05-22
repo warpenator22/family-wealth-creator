@@ -1,7 +1,11 @@
 import type { UkLine, UsLine } from './modelPortfolios';
 import { getModelById } from './modelPortfolios';
 
-import type { AccountChannel } from '../household/accounts';
+import type { AccountChannel, HouseholdAccount } from '../household/accounts';
+
+export function allocationChannelFor(account: HouseholdAccount): AccountChannel {
+  return account.allocationChannel ?? account.channel;
+}
 
 export interface AllocationRow {
   ticker: string;
@@ -14,13 +18,15 @@ export interface AllocationRow {
 export function allocate(
   modelId: string,
   pot: number,
-  channel: AccountChannel
+  channel: AccountChannel,
+  linesChannel?: AccountChannel
 ): AllocationRow[] {
   if (channel === 'crypto') return [];
   const model = getModelById(modelId);
   if (!model) return [];
 
-  const lines: (UkLine | UsLine)[] = channel === 'uk' ? model.uk : model.us;
+  const pick = linesChannel ?? channel;
+  const lines: (UkLine | UsLine)[] = pick === 'uk' ? model.uk : model.us;
   const totalWeight = lines.reduce((s, l) => s + l.weight, 0);
 
   return lines
@@ -29,7 +35,7 @@ export function allocate(
       const w = totalWeight > 0 ? (line.weight / totalWeight) * 100 : 0;
       const amount = Math.round((w / 100) * pot * 100) / 100;
       const meta =
-        channel === 'uk'
+        pick === 'uk'
           ? [
               (line as UkLine).exchange,
               (line as UkLine).accumulating ? 'Acc' : 'Dist',

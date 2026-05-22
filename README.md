@@ -6,8 +6,8 @@ UK investment portfolio planner for ISAs and SIPPs — built for the Warp househ
 
 | Wrapper | Starting pot | Goal | Horizon |
 |---------|--------------|------|---------|
-| Kids' ISA | £20,000 | ~£100,000 | 5 years |
-| Personal ISA | £50,000 | ~£300,000 | 5 years |
+| Your ISA (Kids Fund) | £20,000 | ~£100,000 | 5 years |
+| Your ISA (Personal) | £50,000 | ~£300,000 | 5 years |
 | Personal SIPP | £0 (inactive) | ~£3,000/mo income | Retirement |
 
 ## Run locally

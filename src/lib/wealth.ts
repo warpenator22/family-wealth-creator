@@ -46,15 +46,15 @@ export const DEFAULT_WEALTH: WealthSnapshot = {
     },
     {
       id: 'uk-kids-isa',
-      label: "Kids' ISA",
+      label: 'Your ISA (Kids Fund)',
       valueGbp: 20_000,
       category: 'uk-invested',
       liquid: true,
-      notes: 'Stocks & Shares ISA — max £20k/yr in their name.',
+      notes: 'Your adult ISA — £20k/yr, earmarked for kids’ goal; PFIC-safe stocks only.',
     },
     {
       id: 'uk-isa',
-      label: 'Your ISA',
+      label: 'Your ISA (Personal)',
       valueGbp: 50_000,
       category: 'uk-invested',
       liquid: true,
@@ -120,7 +120,7 @@ export function deploymentLadder(
       priority: 2,
       title: 'Max tax wrappers (year 1)',
       amountHint: formatGBP(yearOneWrappers),
-      detail: `${isaHolders} ISAs × ${formatGBP(annualIsaRoomPerPerson)} = ${formatGBP(yearOneWrappers)} this tax year (kids + yours) — invest on day one if possible.`,
+      detail: `${isaHolders} ISAs × ${formatGBP(annualIsaRoomPerPerson)} = ${formatGBP(yearOneWrappers)} this tax year (Kids Fund + Personal) — invest on day one if possible.`,
     },
     {
       priority: 3,

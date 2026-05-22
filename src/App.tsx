@@ -69,7 +69,7 @@ function App() {
         <>
           <section className="summary-strip">
             <div className="summary-card">
-              <span className="summary-label">Kids&apos; ISA</span>
+              <span className="summary-label">Your ISA (Kids Fund)</span>
               <span className="summary-value">£20k → £100k</span>
               <span className="summary-horizon">5 years</span>
             </div>

@@ -46,7 +46,7 @@ export function NetWorthOverview() {
       },
       {
         id: 'uk-kids-isa',
-        label: "Kids' ISA",
+        label: 'Your ISA (Kids Fund)',
         valueGbp: ukKidsIsaGbp,
         category: 'uk-invested',
         liquid: true,
@@ -209,9 +209,8 @@ export function NetWorthOverview() {
             wrapper.
           </li>
           <li>
-            <strong>£100k kids&apos; ISA</strong> — their own {formatGBP(20_000)}/yr allowance;
-            maxing it at ~8% projects well past £100k in 5 years. You can contribute less if
-            £100k is the ceiling.
+            <strong>£100k Kids Fund ISA</strong> — your {formatGBP(20_000)}/yr adult allowance,
+            PFIC-safe stocks (not UCITS); maxing at ~8% projects well past £100k in 5 years.
           </li>
           <li>
             <strong>SIPP £3k/mo income</strong> — a one-off {formatGBP(50_000)}–
