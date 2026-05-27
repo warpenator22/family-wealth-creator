@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
+import { formatMoney } from '../lib/finance';
 import {
   ACCOUNT_KIND_LABELS,
   type AccountKind,
 } from '../lib/household/accounts';
+import { useMarketIntel } from '../hooks/useMarketIntel';
+import { valueForHolding } from '../lib/market/holdingValue';
 
 const KINDS = Object.keys(ACCOUNT_KIND_LABELS) as AccountKind[];
 
 export function AccountsManager() {
   const { state, addAccount, updateAccount, removeAccount } = useHousehold();
+  const { quotes } = useMarketIntel();
   const [label, setLabel] = useState('');
   const [kind, setKind] = useState<AccountKind>('crypto');
   const [currency, setCurrency] = useState<'GBP' | 'USD'>('GBP');
@@ -18,6 +22,30 @@ export function AccountsManager() {
 
   const holdingsByAccount = (accountId: string) =>
     state.holdings.filter((h) => h.accountId === accountId).length;
+
+  const accountTotals = useMemo(() => {
+    const out = new Map<
+      string,
+      { valueNative: number; gainNative: number; liveCount: number; totalCount: number }
+    >();
+    for (const h of state.holdings) {
+      const q = quotes.get(h.symbol.toUpperCase());
+      const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
+      const prev = out.get(h.accountId) ?? {
+        valueNative: 0,
+        gainNative: 0,
+        liveCount: 0,
+        totalCount: 0,
+      };
+      out.set(h.accountId, {
+        valueNative: prev.valueNative + v.valueNative,
+        gainNative: prev.gainNative + v.gainNative,
+        liveCount: prev.liveCount + (v.hasLivePrice ? 1 : 0),
+        totalCount: prev.totalCount + 1,
+      });
+    }
+    return out;
+  }, [state.holdings, quotes]);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +138,7 @@ export function AccountsManager() {
         <ul className="accounts-list">
           {state.accounts.map((a) => {
             const holdingCount = holdingsByAccount(a.id);
+            const totals = accountTotals.get(a.id);
             return (
               <li key={a.id} className={`account-card kind-${a.kind}`}>
                 <div className="account-card-head">
@@ -132,6 +161,23 @@ export function AccountsManager() {
                       ? 'US stocks in Fund manager'
                       : 'UK ETFs in Fund manager'}
                 </span>
+                {holdingCount > 0 && totals && (
+                  <div className="account-value-row">
+                    <span className="account-value">
+                      Value {formatMoney(totals.valueNative, a.currency, true)}
+                    </span>
+                    <span
+                      className={`account-pl ${totals.gainNative >= 0 ? 'up' : 'down'}`}
+                    >
+                      P/L {formatMoney(totals.gainNative, a.currency, true)}
+                    </span>
+                    {totals.liveCount < totals.totalCount && (
+                      <span className="account-live-hint">
+                        partial live ({totals.liveCount}/{totals.totalCount})
+                      </span>
+                    )}
+                  </div>
+                )}
                 {a.notes && <span className="account-notes">{a.notes}</span>}
                 <div className="account-card-actions">
                   <label className="inline-edit">

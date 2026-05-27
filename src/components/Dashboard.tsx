@@ -46,6 +46,30 @@ export function Dashboard() {
     };
   }, [state.holdings, quotes]);
 
+  const accountTotals = useMemo(() => {
+    const out = new Map<
+      string,
+      { valueNative: number; gainNative: number; liveCount: number; totalCount: number }
+    >();
+    for (const h of state.holdings) {
+      const q = quotes.get(h.symbol.toUpperCase());
+      const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
+      const prev = out.get(h.accountId) ?? {
+        valueNative: 0,
+        gainNative: 0,
+        liveCount: 0,
+        totalCount: 0,
+      };
+      out.set(h.accountId, {
+        valueNative: prev.valueNative + v.valueNative,
+        gainNative: prev.gainNative + v.gainNative,
+        liveCount: prev.liveCount + (v.hasLivePrice ? 1 : 0),
+        totalCount: prev.totalCount + 1,
+      });
+    }
+    return out;
+  }, [state.holdings, quotes]);
+
   const saveNote = () => setDailyNote(note);
 
   const handleRefresh = async () => {
@@ -117,6 +141,41 @@ export function Dashboard() {
           </span>
         </div>
       </div>
+
+      <section className="dash-section">
+        <h2>Account totals</h2>
+        {state.holdings.length === 0 ? (
+          <p className="empty-hint">Add holdings to see live totals by account.</p>
+        ) : (
+          <div className="account-totals-grid">
+            {state.accounts
+              .filter((a) => accountTotals.has(a.id))
+              .map((a) => {
+                const totals = accountTotals.get(a.id);
+                if (!totals) return null;
+                return (
+                  <div key={a.id} className="account-total-card">
+                    <div className="account-total-top">
+                      <span className="quote-account">{a.label}</span>
+                      <span className="account-currency">{a.currency}</span>
+                    </div>
+                    <span className="account-total-value">
+                      {formatMoney(totals.valueNative, a.currency, true)}
+                    </span>
+                    <span className={`account-total-pl ${totals.gainNative >= 0 ? 'up' : 'down'}`}>
+                      P/L {formatMoney(totals.gainNative, a.currency, true)}
+                    </span>
+                    {totals.liveCount < totals.totalCount && (
+                      <span className="account-total-hint">
+                        partial live ({totals.liveCount}/{totals.totalCount})
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </section>
 
       <section className="dash-section">
         <h2>Today&apos;s Warp family note</h2>
