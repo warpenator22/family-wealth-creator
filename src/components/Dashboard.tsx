@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
 import { formatGBP, formatMoney } from '../lib/finance';
+import {
+  filterAccountsForMember,
+  filterHoldingsForMember,
+} from '../lib/household/memberScope';
 import { valueForHolding } from '../lib/market/holdingValue';
 import { formatPct, formatUsd, isUsableQuote } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
@@ -25,12 +29,22 @@ export function Dashboard() {
     setNote(getDailyNote());
   }, [activeMember.id, getDailyNote]);
 
+  const visibleHoldings = useMemo(
+    () => filterHoldingsForMember(state.holdings, state.accounts, activeMember.id),
+    [state.holdings, state.accounts, activeMember.id]
+  );
+
+  const visibleAccounts = useMemo(
+    () => filterAccountsForMember(state.accounts, activeMember.id),
+    [state.accounts, activeMember.id]
+  );
+
   const portfolioStats = useMemo(() => {
     let costGbp = 0;
     let valueGbp = 0;
     let dayChangeGbp = 0;
 
-    for (const h of state.holdings) {
+    for (const h of visibleHoldings) {
       const q = quotes.get(h.symbol.toUpperCase());
       const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
       costGbp += v.costGbp;
@@ -44,14 +58,14 @@ export function Dashboard() {
       dayChangeGbp,
       gainGbp: valueGbp - costGbp,
     };
-  }, [state.holdings, quotes]);
+  }, [visibleHoldings, quotes]);
 
   const accountTotals = useMemo(() => {
     const out = new Map<
       string,
       { valueNative: number; gainNative: number; liveCount: number; totalCount: number }
     >();
-    for (const h of state.holdings) {
+    for (const h of visibleHoldings) {
       const q = quotes.get(h.symbol.toUpperCase());
       const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
       const prev = out.get(h.accountId) ?? {
@@ -68,7 +82,7 @@ export function Dashboard() {
       });
     }
     return out;
-  }, [state.holdings, quotes]);
+  }, [visibleHoldings, quotes]);
 
   const saveNote = () => setDailyNote(note);
 
@@ -144,11 +158,11 @@ export function Dashboard() {
 
       <section className="dash-section">
         <h2>Account totals</h2>
-        {state.holdings.length === 0 ? (
+        {visibleHoldings.length === 0 ? (
           <p className="empty-hint">Add holdings to see live totals by account.</p>
         ) : (
           <div className="account-totals-grid">
-            {state.accounts
+            {visibleAccounts
               .filter((a) => accountTotals.has(a.id))
               .map((a) => {
                 const totals = accountTotals.get(a.id);
@@ -194,14 +208,14 @@ export function Dashboard() {
       </section>
 
       <section className="dash-section">
-        <h2>Your holdings</h2>
-        {state.holdings.length === 0 ? (
+        <h2>Holdings ({activeMember.name})</h2>
+        {visibleHoldings.length === 0 ? (
           <p className="empty-hint">
-            No holdings yet — add your MSFT / GOOGL trades in the Holdings tab.
+            No holdings in this view — switch person or add trades in Holdings.
           </p>
         ) : (
           <div className="quote-grid">
-            {state.holdings.map((h) => {
+            {visibleHoldings.map((h) => {
               const q = quotes.get(h.symbol.toUpperCase());
               const acct = state.accounts.find((a) => a.id === h.accountId);
               const isCrypto = acct?.kind === 'crypto';

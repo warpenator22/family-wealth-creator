@@ -38,6 +38,16 @@ function normalizeAccounts(saved: HouseholdAccount[] | undefined): HouseholdAcco
       merged.suggestedModelId = def.suggestedModelId;
       merged.notes = def.notes;
     }
+    if (!match?.ownership) {
+      merged.ownership = def.ownership ?? 'personal';
+    }
+    if (match?.ownership === 'joint' && def.id === 'crypto' && def.ownership === 'personal') {
+      merged.ownership = 'personal';
+      merged.ownerMemberId = def.ownerMemberId;
+    }
+    if (!match?.ownerMemberId && def.ownerMemberId) {
+      merged.ownerMemberId = def.ownerMemberId;
+    }
     byId.set(def.id, merged);
   }
   for (const a of saved) {

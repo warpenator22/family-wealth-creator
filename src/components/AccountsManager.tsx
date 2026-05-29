@@ -179,6 +179,43 @@ export function AccountsManager() {
                   </div>
                 )}
                 {a.notes && <span className="account-notes">{a.notes}</span>}
+                <div className="account-ownership-row">
+                  <label className="account-joint-check">
+                    <input
+                      type="checkbox"
+                      checked={a.ownership === 'joint'}
+                      onChange={(e) =>
+                        updateAccount(a.id, {
+                          ownership: e.target.checked ? 'joint' : 'personal',
+                          ownerMemberId: e.target.checked ? undefined : a.ownerMemberId,
+                        })
+                      }
+                    />
+                    Held jointly
+                  </label>
+                  {a.ownership !== 'joint' && (
+                    <label className="account-owner-select">
+                      Owner
+                      <select
+                        value={a.ownerMemberId ?? ''}
+                        onChange={(e) =>
+                          updateAccount(a.id, {
+                            ownerMemberId: e.target.value || undefined,
+                          })
+                        }
+                      >
+                        <option value="">Either (legacy)</option>
+                        {state.members
+                          .filter((m) => m.id !== 'member-3')
+                          .map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
                 <div className="account-card-actions">
                   <label className="inline-edit">
                     Rename

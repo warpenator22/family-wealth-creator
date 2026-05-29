@@ -23,6 +23,10 @@ export interface HouseholdAccount {
   allocationChannel?: AccountChannel;
   /** Planning default for fund manager pot size */
   defaultPot?: number;
+  /** Joint = held in both names; personal = one person's wrapper */
+  ownership?: 'joint' | 'personal';
+  /** For personal accounts — which member owns this wrapper */
+  ownerMemberId?: string;
   notes?: string;
 }
 
@@ -48,6 +52,8 @@ export const DEFAULT_ACCOUNTS: HouseholdAccount[] = [
     platform: 'Interactive Investors',
     suggestedModelId: 'isa-us-citizen-growth',
     defaultPot: 20_000,
+    ownership: 'personal',
+    ownerMemberId: 'member-1',
     notes:
       'Adult Stocks & Shares ISA in your name, earmarked for the kids’ £100k goal. US-person: individual stocks only (no UCITS/PFIC).',
   },
@@ -61,6 +67,8 @@ export const DEFAULT_ACCOUNTS: HouseholdAccount[] = [
     platform: 'Interactive Investors',
     suggestedModelId: 'isa-us-citizen-growth',
     defaultPot: 50_000,
+    ownership: 'personal',
+    ownerMemberId: 'member-2',
     notes: 'Your £300k ISA goal. Same PFIC-safe stock approach as the Kids Fund ISA.',
   },
   {
@@ -99,6 +107,8 @@ export const DEFAULT_ACCOUNTS: HouseholdAccount[] = [
     channel: 'crypto',
     platform: 'e.g. Coinbase, Ledger',
     defaultPot: 0,
+    ownership: 'personal',
+    ownerMemberId: 'member-1',
   },
   {
     id: 'pension',

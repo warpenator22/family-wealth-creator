@@ -346,6 +346,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
         allocationChannel:
           input.kind === 'isa' || input.kind === 'gia' ? 'us' : undefined,
         defaultPot: 0,
+        ownership: 'personal',
       };
       commitState((s) => ({
         ...s,

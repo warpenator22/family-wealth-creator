@@ -1,6 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useHousehold } from '../context/HouseholdContext';
 import { formatMoney } from '../lib/finance';
+import {
+  filterAccountsForMember,
+  filterHoldingsForMember,
+  isJointMember,
+} from '../lib/household/memberScope';
 import { valueForHolding } from '../lib/market/holdingValue';
 import { formatPct, formatUsd, isUsableQuote } from '../lib/market/finnhub';
 import { useMarketIntel } from '../hooks/useMarketIntel';
@@ -16,13 +21,23 @@ export function HoldingsEditor() {
   const [accountId, setAccountId] = useState(state.accounts[0]?.id ?? '');
   const [notes, setNotes] = useState('');
 
-  useEffect(() => {
-    if (!state.accounts.some((a) => a.id === accountId) && state.accounts[0]) {
-      setAccountId(state.accounts[0].id);
-    }
-  }, [state.accounts, accountId]);
+  const accountsForView = useMemo(
+    () => filterAccountsForMember(state.accounts, activeMember.id),
+    [state.accounts, activeMember.id]
+  );
 
-  const selectedAccount = state.accounts.find((a) => a.id === accountId);
+  const visibleHoldings = useMemo(
+    () => filterHoldingsForMember(state.holdings, state.accounts, activeMember.id),
+    [state.holdings, state.accounts, activeMember.id]
+  );
+
+  useEffect(() => {
+    if (!accountsForView.some((a) => a.id === accountId) && accountsForView[0]) {
+      setAccountId(accountsForView[0].id);
+    }
+  }, [accountsForView, accountId]);
+
+  const selectedAccount = accountsForView.find((a) => a.id === accountId);
   const isCrypto = selectedAccount?.kind === 'crypto';
 
   const submit = (e: React.FormEvent) => {
@@ -57,14 +72,18 @@ export function HoldingsEditor() {
       </div>
       <UserSwitcher />
       <p className="holdings-member-hint">
-        Select <strong>Joint</strong> for accounts in both your names; Richard or Erica for
-        individual wrappers. For <strong>Schwab / US brokerage</strong>, enter the dollar cost
-        Schwab shows — not pounds.
+        Showing holdings for <strong>{activeMember.name}</strong>
+        {isJointMember(activeMember.id)
+          ? ' — joint accounts only (mark accounts as Joint in Accounts).'
+          : ' — your personal accounts only.'}{' '}
+        For <strong>Schwab / US brokerage</strong>, enter the dollar cost Schwab shows — not pounds.
       </p>
 
-      {state.accounts.length === 0 ? (
+      {accountsForView.length === 0 ? (
         <p className="empty-hint">
-          Add accounts first (Crypto, Pension, etc.) in the <strong>Accounts</strong> tab.
+          {isJointMember(activeMember.id)
+            ? 'No joint accounts yet. In Accounts, edit an account and check “Held jointly”.'
+            : 'No personal accounts for this person — add one in Accounts or switch to Joint.'}
         </p>
       ) : (
         <form className="holding-form" onSubmit={submit}>
@@ -102,7 +121,7 @@ export function HoldingsEditor() {
             <label>
               Account
               <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-                {state.accounts.map((a) => (
+                {accountsForView.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.label} ({a.kind})
                   </option>
@@ -138,14 +157,16 @@ export function HoldingsEditor() {
           </tr>
         </thead>
         <tbody>
-          {state.holdings.length === 0 && (
+          {visibleHoldings.length === 0 && (
             <tr>
               <td colSpan={8} className="empty-hint">
-                Example: BTC · 0.5 · £20,000 · Crypto — or MSFT · 4 · £1,200 · Your ISA (Kids Fund)
+                {state.holdings.length === 0
+                  ? 'Example: BTC · 0.5 · £20,000 · Crypto — or MSFT · 4 · £1,200 · Your ISA (Kids Fund)'
+                  : `No holdings in ${activeMember.name}'s view — switch person or add one above.`}
               </td>
             </tr>
           )}
-          {state.holdings.map((h) => {
+          {visibleHoldings.map((h) => {
             const member = state.members.find((m) => m.id === h.memberId);
             const q = quotes.get(h.symbol.toUpperCase());
             const v = valueForHolding(h.shares, h.costGbp, h.currency, q);
